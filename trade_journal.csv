@@ -1,3 +1,7 @@
 timestamp,trade_id,pair,action,confidence,entry_price,sl,tp,status,reason,pnl,win_loss
 2025-08-18 12:53:15,afa85e8f,XAUUSD,NO TRADE,0.0,,,,SKIPPED,"Below threshold or NO_TRADE (conf=0.0%, action=NO TRADE)",,
 2025-08-18 12:53:15,66bef810,BTCUSD,NO TRADE,0.0,,,,SKIPPED,"Below threshold or NO_TRADE (conf=0.0%, action=NO TRADE)",,
+2025-08-18 12:56:28,607e71e2,XAUUSD,NO TRADE,0.0,,,,SKIPPED,"Below threshold or NO_TRADE (conf=0.0%, action=NO TRADE)",,
+2025-08-18 12:56:28,d7a9075e,BTCUSD,NO TRADE,0.0,,,,SKIPPED,"Below threshold or NO_TRADE (conf=0.0%, action=NO TRADE)",,
+2025-08-18 13:06:37,85233f97,BTCUSD,BUY,75.5,,,,SKIPPED,Below threshold (min: 78.0%) or NO_TRADE signal,,
+2025-08-18 13:06:37,26e7b990,XAUUSD,NO TRADE,0.0,,,,SKIPPED,Below threshold (min: 78.0%) or NO_TRADE signal,,
