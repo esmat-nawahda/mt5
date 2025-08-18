@@ -14,7 +14,8 @@
       "Bash(where.exe:*)",
       "Bash(powershell:*)",
       "Bash(C:/Users/esmat/AppData/Local/Programs/Python/Python313/python.exe -m pip install -r requirements.txt)",
-      "Bash(C:/Users/esmat/AppData/Local/Programs/Python/Python313/python.exe bot.py)"
+      "Bash(C:/Users/esmat/AppData/Local/Programs/Python/Python313/python.exe bot.py)",
+      "Bash(C:/Users/esmat/AppData/Local/Programs/Python/Python313/python.exe test_simple.py)"
     ],
     "deny": [],
     "ask": [],

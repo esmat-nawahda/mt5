@@ -125,6 +125,18 @@ Market snapshots:
     r = requests.post(LLM_URL, headers=headers, json=payload, timeout=20)
     r.raise_for_status()
     content = r.json()["choices"][0]["message"]["content"]
+    
+    # Strip markdown code blocks if present
+    if content.startswith("```"):
+        lines = content.split('\n')
+        # Remove first line (```yaml or similar)
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        # Remove last line if it's just ```
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        content = '\n'.join(lines)
+    
     try:
         parsed = yaml.safe_load(content)
         return parsed
@@ -186,8 +198,11 @@ def cycle_once():
 
 def main():
     init_logger()
-    if not mt5.initialize(login=MT5_LOGIN or None, password=MT5_PASSWORD or None, server=MT5_SERVER or None):
-        raise RuntimeError(f"MT5 init failed: {mt5.last_error()}")
+    # Try connecting without credentials first (use already logged-in terminal)
+    if not mt5.initialize():
+        # If that fails, try with credentials
+        if not mt5.initialize(login=MT5_LOGIN or None, password=MT5_PASSWORD or None, server=MT5_SERVER or None):
+            raise RuntimeError(f"MT5 init failed: {mt5.last_error()}")
     logging.info("Bot with logging started.")
     for p in PAIRS:
         mt5.symbol_select(p, True)
