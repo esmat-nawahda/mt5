@@ -169,3 +169,7 @@ timestamp,trade_id,pair,action,confidence,entry_price,sl,tp,status,reason,pnl,wi
 2025-08-18 19:47:46,d7fe42f1,XAUUSD,NO_TRADE,0.0,,,,SKIPPED,Below threshold (min: 78.0%) or NO_TRADE signal,,
 2025-08-18 19:50:29,2cba2c6b,BTCUSD,BUY,82.4,116336.0,115762.38,116853.75,ERROR,Order failed: 10027,,
 2025-08-18 19:53:38,198314542,BTCUSD,BUY,82.4,116287.0,115713.38,116853.75,OPEN,Thanatos-Guardian approved,,
+2025-08-18 19:59:34,c897b7be,XAUUSD,NO_TRADE,65.2,,,,SKIPPED,Below threshold (min: 78.0%) or NO_TRADE signal,,
+2025-08-18 19:59:34,b9d1f6ab,BTCUSD,NO_TRADE,65.2,,,,SKIPPED,Below threshold (min: 78.0%) or NO_TRADE signal,,
+2025-08-18 20:04:07,cd1286c8,XAUUSD,NO_TRADE,65.2,,,,SKIPPED,Below threshold (min: 78.0%) or NO_TRADE signal,,
+2025-08-18 20:04:07,4ca73a5b,BTCUSD,NO_TRADE,65.2,,,,SKIPPED,Below threshold (min: 78.0%) or NO_TRADE signal,,

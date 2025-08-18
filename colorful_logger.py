@@ -148,8 +148,17 @@ def print_position_status(positions):
         print(f"\n{Colors.BRIGHT_MAGENTA}[OPEN POSITIONS]{Colors.RESET}")
         for symbol, pos in positions.items():
             profit_color = Colors.BRIGHT_GREEN if pos.profit >= 0 else Colors.BRIGHT_RED
+            # Get position type description
+            import MetaTrader5 as mt5
+            if pos.type == mt5.POSITION_TYPE_BUY:
+                type_desc = "BUY"
+            elif pos.type == mt5.POSITION_TYPE_SELL:
+                type_desc = "SELL"
+            else:
+                type_desc = f"Type {pos.type}"
+            
             print(f"  {Colors.WHITE}{symbol}:{Colors.RESET}")
-            print(f"    Type: {Colors.CYAN}{pos.type_description}{Colors.RESET}")
+            print(f"    Type: {Colors.CYAN}{type_desc}{Colors.RESET}")
             print(f"    Volume: {Colors.YELLOW}{pos.volume} lots{Colors.RESET}")
             print(f"    Open Price: {Colors.WHITE}${pos.price_open:.5f}{Colors.RESET}")
             print(f"    Current P/L: {profit_color}${pos.profit:.2f}{Colors.RESET}")

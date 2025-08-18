@@ -1,249 +1,5 @@
 [
   {
-    "timestamp": "2025-08-18 16:21:27",
-    "symbol": "XAUUSD",
-    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"XAUUSD\"\n  timestamp_cet: \"2025-08-18 16:21\"\n  price: 3332.75\n  sessions: {active: \"New York\", ny_open_boost: true}\n  measures:\n    adx14_h1: 89.5\n    atr_h1_points: 6.59\n    atr_h1_pct: 0.2\n    bb20_width_pct_h1: 0.92\n    inside_lookback_h1: 15\n    range_high_h1: 3358.31\n    range_low_h1: 3331.99\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Bearish\"\n    M5_setup: \"Pullback\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 0\n    equity_usd: 10000.0\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news or after UK close\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 89.5,
-        "required": 20,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.2,
-        "required": 0.35,
-        "passed": false
-      },
-      "BB_width_threshold": {
-        "value": 0.92,
-        "required": 0.6,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 15,
-        "passed": false
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "16:21"
-      },
-      "active_trades": {
-        "count": 0,
-        "max_allowed": 2,
-        "passed": true
-      },
-      "spread_check": {
-        "ok": true,
-        "spread": 0.13000000000010914
-      },
-      "session": "New York",
-      "ny_open_boost": true,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bearish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 78.0
-    },
-    "ai_response": {
-      "action": "NO_TRADE",
-      "confidence": 65.0,
-      "analysis": "ATR% (0.2) below required threshold (0.35). H1 trend sideways with insufficient volatility. Anti-range rules prevent trade despite NY open boost.",
-      "guardian_status": {
-        "anti_range_pass": false,
-        "confluence_pass": false,
-        "max_protect_pass": false
-      }
-    }
-  },
-  {
-    "timestamp": "2025-08-18 16:21:36",
-    "symbol": "BTCUSD",
-    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"BTCUSD\"\n  timestamp_cet: \"2025-08-18 16:21\"\n  price: 116088.25\n  sessions: {active: \"New York\", ny_open_boost: true}\n  measures:\n    adx14_h1: 408.0\n    atr_h1_points: 574.12\n    atr_h1_pct: 0.49\n    bb20_width_pct_h1: 3.36\n    inside_lookback_h1: 15\n    range_high_h1: 116413.25\n    range_low_h1: 114680.0\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Bullish\"\n    M5_setup: \"None\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 0\n    equity_usd: 10000.0\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news or after UK close\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 408.0,
-        "required": 20,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.49,
-        "required": 0.35,
-        "passed": true
-      },
-      "BB_width_threshold": {
-        "value": 3.36,
-        "required": 0.6,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 15,
-        "passed": false
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "16:21"
-      },
-      "active_trades": {
-        "count": 0,
-        "max_allowed": 2,
-        "passed": true
-      },
-      "spread_check": {
-        "ok": true,
-        "spread": 37.5
-      },
-      "session": "New York",
-      "ny_open_boost": true,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "None",
-      "volume_ok": false,
-      "min_confidence_required": 78.0
-    },
-    "ai_response": {
-      "action": "NO_TRADE",
-      "confidence": 65.0,
-      "analysis": "ADX exceeds threshold but H1 trend is sideways. ATR% and BB width meet requirements, but volume is insufficient and MTF trend lacks confluence. Anti-range rules prevent trade due to 15-candle consolidation.",
-      "guardian_status": {
-        "anti_range_pass": false,
-        "confluence_pass": false,
-        "max_protect_pass": false
-      }
-    }
-  },
-  {
-    "timestamp": "2025-08-18 16:26:01",
-    "symbol": "XAUUSD",
-    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"XAUUSD\"\n  timestamp_cet: \"2025-08-18 16:25\"\n  price: 3332.6\n  sessions: {active: \"New York\", ny_open_boost: true}\n  measures:\n    adx14_h1: 89.5\n    atr_h1_points: 6.59\n    atr_h1_pct: 0.2\n    bb20_width_pct_h1: 0.92\n    inside_lookback_h1: 15\n    range_high_h1: 3358.31\n    range_low_h1: 3331.99\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Bearish\"\n    M5_setup: \"Pullback\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 0\n    equity_usd: 10000.0\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news or after UK close\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 89.5,
-        "required": 20,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.2,
-        "required": 0.35,
-        "passed": false
-      },
-      "BB_width_threshold": {
-        "value": 0.92,
-        "required": 0.6,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 15,
-        "passed": false
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "16:25"
-      },
-      "active_trades": {
-        "count": 0,
-        "max_allowed": 2,
-        "passed": true
-      },
-      "spread_check": {
-        "ok": true,
-        "spread": 0.13000000000010914
-      },
-      "session": "New York",
-      "ny_open_boost": true,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bearish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 78.0
-    },
-    "ai_response": {
-      "action": "NO_TRADE",
-      "confidence": 65.2,
-      "analysis": "ATR% (0.2) below required threshold (0.35). H1 trend sideways with M15 bearish divergence. Volume conditions not met. Insufficient volatility for trade entry.",
-      "guardian_status": {
-        "anti_range_pass": false,
-        "confluence_pass": false,
-        "max_protect_pass": false
-      }
-    }
-  },
-  {
-    "timestamp": "2025-08-18 16:26:10",
-    "symbol": "BTCUSD",
-    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"BTCUSD\"\n  timestamp_cet: \"2025-08-18 16:26\"\n  price: 116146.25\n  sessions: {active: \"New York\", ny_open_boost: true}\n  measures:\n    adx14_h1: 408.0\n    atr_h1_points: 574.12\n    atr_h1_pct: 0.49\n    bb20_width_pct_h1: 3.36\n    inside_lookback_h1: 15\n    range_high_h1: 116413.25\n    range_low_h1: 114680.0\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Bullish\"\n    M5_setup: \"Pullback\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 0\n    equity_usd: 10000.0\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news or after UK close\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 408.0,
-        "required": 20,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.49,
-        "required": 0.35,
-        "passed": true
-      },
-      "BB_width_threshold": {
-        "value": 3.36,
-        "required": 0.6,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 15,
-        "passed": false
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "16:26"
-      },
-      "active_trades": {
-        "count": 0,
-        "max_allowed": 2,
-        "passed": true
-      },
-      "spread_check": {
-        "ok": true,
-        "spread": 45.5
-      },
-      "session": "New York",
-      "ny_open_boost": true,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 78.0
-    },
-    "ai_response": {
-      "action": "NO_TRADE",
-      "confidence": 65.2,
-      "analysis": "ADX exceeds threshold but H1 trend is sideways with M15 bullish divergence. ATR% and BB width meet requirements, but volume is insufficient and inside_lookback_h1 indicates consolidation. No trade due to low confidence and mixed signals.",
-      "guardian_status": {
-        "anti_range_pass": false,
-        "confluence_pass": false,
-        "max_protect_pass": false
-      }
-    }
-  },
-  {
     "timestamp": "2025-08-18 16:30:48",
     "symbol": "XAUUSD",
     "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"XAUUSD\"\n  timestamp_cet: \"2025-08-18 16:30\"\n  price: 3332.51\n  sessions: {active: \"New York\", ny_open_boost: true}\n  measures:\n    adx14_h1: 89.5\n    atr_h1_points: 6.59\n    atr_h1_pct: 0.2\n    bb20_width_pct_h1: 0.92\n    inside_lookback_h1: 15\n    range_high_h1: 3358.31\n    range_low_h1: 3331.99\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Bearish\"\n    M5_setup: \"Pullback\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 0\n    equity_usd: 10000.0\n    red_news_window: false\n    uk_close_block: true\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news or after UK close\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
@@ -6155,6 +5911,254 @@
         "anti_range_pass": true,
         "confluence_pass": true,
         "max_protect_pass": true
+      }
+    }
+  },
+  {
+    "timestamp": "2025-08-18 19:59:25",
+    "symbol": "XAUUSD",
+    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"XAUUSD\"\n  timestamp_cet: \"2025-08-18 19:59\"\n  price: 3334.1\n  sessions: {active: \"Asian\", ny_open_boost: false}\n  measures:\n    adx14_h1: 1619.1\n    atr_h1_points: 5.05\n    atr_h1_pct: 0.15\n    bb20_width_pct_h1: 0.86\n    inside_lookback_h1: 15\n    range_high_h1: 3358.31\n    range_low_h1: 3330.25\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Sideways\"\n    M5_setup: \"Breakout\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 1\n    equity_usd: 9999.14\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 1619.1,
+        "required": 20,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.15,
+        "required": 0.35,
+        "passed": false
+      },
+      "BB_width_threshold": {
+        "value": 0.86,
+        "required": 0.6,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 15,
+        "passed": false
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "19:59",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "spread_check": {
+        "ok": true,
+        "spread": 0.13000000000010914
+      },
+      "session": "Asian",
+      "ny_open_boost": false,
+      "H1_trend": "Sideways",
+      "M15_trend": "Sideways",
+      "M5_setup": "Breakout",
+      "volume_ok": false,
+      "min_confidence_required": 78.0
+    },
+    "ai_response": {
+      "action": "NO_TRADE",
+      "confidence": 65.2,
+      "analysis": "ADX indicates strong trend but ATR% (0.15%) below required threshold (0.35%). BB width (0.86%) passes but inside_lookback_h1 (15) shows consolidation. Volume conditions not met. Multiple filters failed.",
+      "guardian_status": {
+        "anti_range_pass": false,
+        "confluence_pass": false,
+        "max_protect_pass": false
+      }
+    }
+  },
+  {
+    "timestamp": "2025-08-18 19:59:34",
+    "symbol": "BTCUSD",
+    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"BTCUSD\"\n  timestamp_cet: \"2025-08-18 19:59\"\n  price: 116321.0\n  sessions: {active: \"Asian\", ny_open_boost: false}\n  measures:\n    adx14_h1: 294.7\n    atr_h1_points: 573.62\n    atr_h1_pct: 0.49\n    bb20_width_pct_h1: 2.2\n    inside_lookback_h1: 15\n    range_high_h1: 116853.75\n    range_low_h1: 114680.0\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Bullish\"\n    M5_setup: \"Pullback\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 1\n    equity_usd: 9999.14\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 294.7,
+        "required": 20,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.49,
+        "required": 0.35,
+        "passed": true
+      },
+      "BB_width_threshold": {
+        "value": 2.2,
+        "required": 0.6,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 15,
+        "passed": false
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "19:59",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "spread_check": {
+        "ok": true,
+        "spread": 37.5
+      },
+      "session": "Asian",
+      "ny_open_boost": false,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Pullback",
+      "volume_ok": false,
+      "min_confidence_required": 78.0
+    },
+    "ai_response": {
+      "action": "NO_TRADE",
+      "confidence": 65.2,
+      "analysis": "ADX indicates strong trend but H1 trend is sideways. ATR% and BB width meet requirements, but volume is insufficient and active trades already exist. No clear confluence for entry.",
+      "guardian_status": {
+        "anti_range_pass": true,
+        "confluence_pass": false,
+        "max_protect_pass": false
+      }
+    }
+  },
+  {
+    "timestamp": "2025-08-18 20:03:58",
+    "symbol": "XAUUSD",
+    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"XAUUSD\"\n  timestamp_cet: \"2025-08-18 20:03\"\n  price: 3334.09\n  sessions: {active: \"Asian\", ny_open_boost: false}\n  measures:\n    adx14_h1: 1646.0\n    atr_h1_points: 4.76\n    atr_h1_pct: 0.14\n    bb20_width_pct_h1: 0.9\n    inside_lookback_h1: 15\n    range_high_h1: 3355.67\n    range_low_h1: 3330.25\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Sideways\"\n    M5_setup: \"None\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 1\n    equity_usd: 10036.64\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 1646.0,
+        "required": 20,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.14,
+        "required": 0.35,
+        "passed": false
+      },
+      "BB_width_threshold": {
+        "value": 0.9,
+        "required": 0.6,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 15,
+        "passed": false
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "20:03",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "spread_check": {
+        "ok": true,
+        "spread": 0.1299999999996544
+      },
+      "session": "Asian",
+      "ny_open_boost": false,
+      "H1_trend": "Sideways",
+      "M15_trend": "Sideways",
+      "M5_setup": "None",
+      "volume_ok": false,
+      "min_confidence_required": 78.0
+    },
+    "ai_response": {
+      "action": "NO_TRADE",
+      "confidence": 65.2,
+      "analysis": "Market conditions do not meet minimum requirements for trade execution. ADX indicates strong trend (1646.0), but ATR% (0.14%) is below required 0.35% threshold. BB width (0.9%) passes, but last 15 H1 candles show consolidation. Volume is insufficient and market is in sideways trend across timeframes.",
+      "guardian_status": {
+        "anti_range_pass": false,
+        "confluence_pass": false,
+        "max_protect_pass": false
+      }
+    }
+  },
+  {
+    "timestamp": "2025-08-18 20:04:07",
+    "symbol": "BTCUSD",
+    "prompt": "You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nAnalyze this market data and return STRICT YAML response.\n\nmeta:\n  version: \"15.2-MAXPROTECT\"\n  codename: \"Thanatos-Guardian-Prime\"\n  response_rules: \"STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED\"\n  min_confidence_threshold: \"78%\"\n\ninputs:\n  symbol: \"BTCUSD\"\n  timestamp_cet: \"2025-08-18 20:03\"\n  price: 116348.25\n  sessions: {active: \"Asian\", ny_open_boost: false}\n  measures:\n    adx14_h1: 261.3\n    atr_h1_points: 518.52\n    atr_h1_pct: 0.45\n    bb20_width_pct_h1: 1.85\n    inside_lookback_h1: 15\n    range_high_h1: 116853.75\n    range_low_h1: 114680.0\n  mtf_state:\n    H1_trend: \"Sideways\"\n    M15_trend: \"Bullish\"\n    M5_setup: \"Pullback\"\n    volume_ok: false\n    obv_agrees: true\n  risk_context:\n    active_trades: 1\n    equity_usd: 10036.64\n    red_news_window: false\n    uk_close_block: false\n    spread_ok: true\n    slippage_guard_ok: true\n\nBased on all filters and the anti-range rules, provide a trading decision.\nReturn ONLY this YAML structure:\n\naction: \"BUY\" or \"SELL\" or \"NO_TRADE\"\nconfidence: <float 0-100>\nentry: <float if BUY/SELL>\nsl: <float if BUY/SELL>\ntp1: <float if BUY/SELL>\ntp2: <float if BUY/SELL>\ntp3: <float if BUY/SELL>\nanalysis: <string explaining decision>\nguardian_status:\n  anti_range_pass: <true/false>\n  confluence_pass: <true/false>\n  max_protect_pass: <true/false>\n\nApply all rules:\n- ADX > 20 required for trend\n- ATR% >= 0.35% required for volatility\n- BB width >= 0.6% required\n- No trade if last 15 H1 candles in consolidation\n- No trade during news\n- No trade if active_trades >= 2\n- Minimum 78% confidence required\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 261.3,
+        "required": 20,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.45,
+        "required": 0.35,
+        "passed": true
+      },
+      "BB_width_threshold": {
+        "value": 1.85,
+        "required": 0.6,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 15,
+        "passed": false
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "20:03",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "spread_check": {
+        "ok": true,
+        "spread": 37.5
+      },
+      "session": "Asian",
+      "ny_open_boost": false,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Pullback",
+      "volume_ok": false,
+      "min_confidence_required": 78.0
+    },
+    "ai_response": {
+      "action": "NO_TRADE",
+      "confidence": 65.2,
+      "analysis": "ADX exceeds threshold but H1 trend is sideways. ATR% and BB width meet requirements, but volume is insufficient and active_trades present. No clear directional bias with current MTF state.",
+      "guardian_status": {
+        "anti_range_pass": false,
+        "confluence_pass": false,
+        "max_protect_pass": false
       }
     }
   }
