@@ -249,9 +249,9 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     blocked, reason = is_blocked_now(symbol)
     red_news_window = blocked
     
-    # Check UK close
+    # UK close check removed - no longer blocking trades after UK close
     now = datetime.now()
-    uk_close_block = now.hour >= 16 and now.minute >= 30
+    uk_close_block = False  # Disabled UK close protection
     
     # Get spread
     tick = mt5.symbol_info_tick(symbol)
@@ -316,7 +316,7 @@ Apply all rules:
 - ATR% >= 0.35% required for volatility
 - BB width >= 0.6% required
 - No trade if last 15 H1 candles in consolidation
-- No trade during news or after UK close
+- No trade during news
 - No trade if active_trades >= 2
 - Minimum 78% confidence required
 """
@@ -337,7 +337,7 @@ Apply all rules:
         "BB_width_threshold": {"value": technical_data['measures']['bb20_width_pct_h1'], "required": 0.6, "passed": technical_data['measures']['bb20_width_pct_h1'] >= 0.6},
         "consolidation_check": {"inside_bars": technical_data['measures']['inside_lookback_h1'], "max_allowed": 15, "passed": technical_data['measures']['inside_lookback_h1'] < 15},
         "news_filter": {"blocked": red_news_window, "reason": reason if red_news_window else "Clear"},
-        "uk_close_filter": {"blocked": uk_close_block, "time": f"{now.hour}:{now.minute:02d}"},
+        "uk_close_filter": {"blocked": False, "time": f"{now.hour}:{now.minute:02d}", "status": "DISABLED"},
         "active_trades": {"count": len(open_positions_map()), "max_allowed": 2, "passed": len(open_positions_map()) < 2},
         "spread_check": {"ok": spread_ok, "spread": spread},
         "session": technical_data['sessions']['active'],
