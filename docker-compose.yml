@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  trading-bot:
+    build: .
+    container_name: deepseek_trading_bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    networks:
+      - trading_net
+
+networks:
+  trading_net:
+    driver: bridge

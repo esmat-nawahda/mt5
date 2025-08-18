@@ -1,0 +1,10 @@
+requests
+python-dotenv
+MetaTrader5
+pandas
+numpy
+pyyaml
+beautifulsoup4
+lxml
+python-dateutil
+pytz
