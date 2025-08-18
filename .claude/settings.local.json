@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -m pip install:*)",
+      "Bash(python3 -m pip install:*)",
+      "Bash(py -m pip install:*)",
+      "Bash(where python)",
+      "Bash(C:/Users/esmat/AppData/Local/Microsoft/WindowsApps/python.exe -m pip install -r requirements.txt)",
+      "Bash(python.exe:*)",
+      "Bash(python:*)",
+      "Bash(dir C:\\Python*)",
+      "Bash(/c/Users/esmat/AppData/Local/Microsoft/WindowsApps/python bot.py)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Program Files"
+    ]
+  }
+}

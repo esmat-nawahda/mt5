@@ -24,7 +24,7 @@ LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-trader")
 LLM_KEY = os.getenv("LLM_API_KEY")
 MIN_RECHECK = int(os.getenv("MIN_RECHECK_MINUTES", "3"))
 MAX_RECHECK = int(os.getenv("MAX_RECHECK_MINUTES", "5"))
-VOLUME = float(os.getenv("VOLUME", "0.10"))
+VOLUME = float(os.getenv("VOLUME", "1.00"))
 DEVIATION = int(os.getenv("DEVIATION", "30"))
 MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "78"))
 
