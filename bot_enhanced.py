@@ -375,7 +375,7 @@ def detect_existing_breakeven_positions():
                 positions_at_breakeven.add(position.ticket)
 
 def manage_trailing_stops():
-    """Manage trailing stops for positions that have been moved to breakeven"""
+    """Dynamic trailing stop that activates at $60 profit with 10-pip trail"""
     global positions_at_breakeven
     
     # Check if trailing stop feature is enabled
@@ -389,23 +389,26 @@ def manage_trailing_stops():
         positions_at_breakeven.clear()
         return
     
-    # Auto-detect existing breakeven positions (for bot restarts)
-    detect_existing_breakeven_positions()
-    
-    # Get current position tickets to clean up closed positions
-    current_tickets = {pos.ticket for pos in positions}
-    positions_at_breakeven = positions_at_breakeven.intersection(current_tickets)
-    
+    # Get configuration parameters
+    activation_profit = trailing_config.get('activation_profit', 60)
     trail_distances = trailing_config.get('trail_distance_points', {})
-    step_size = trailing_config.get('step_size', 5)
+    step_size = trailing_config.get('step_size', 1)
+    dynamic_mode = trailing_config.get('dynamic_mode', True)
     
     for position in positions:
-        # Only trail positions that have been moved to breakeven
+        # Dynamic mode: activate trailing when profit reaches threshold
+        if dynamic_mode and position.profit >= activation_profit:
+            # Mark position for trailing if profit threshold reached
+            if position.ticket not in positions_at_breakeven:
+                positions_at_breakeven.add(position.ticket)
+                print_success(f"🎯 TRAILING STOP ACTIVATED for {position.symbol} - Profit: ${position.profit:.2f}")
+        
+        # Skip if not ready for trailing
         if position.ticket not in positions_at_breakeven:
             continue
         
-        # Get trailing distance for this instrument
-        trail_distance = trail_distances.get(position.symbol, 15)
+        # Get trailing distance for this instrument (10 pips for all)
+        trail_distance = trail_distances.get(position.symbol, 10)
         
         # Get current market price
         tick = mt5.symbol_info_tick(position.symbol)
@@ -413,19 +416,22 @@ def manage_trailing_stops():
             continue
         
         current_price = tick.bid if position.type == mt5.POSITION_TYPE_BUY else tick.ask
-        current_sl = position.sl
+        current_sl = position.sl if position.sl else 0
         entry_price = position.price_open
         
-        # Calculate trail distance in price terms
+        # Calculate trail distance in price terms (10 pips conversion)
         if "XAU" in position.symbol:
-            trail_distance_price = trail_distance * 0.01  # Convert pips to price for Gold
+            # For Gold: 10 pips = 0.10 price units
+            trail_distance_price = 10 * 0.01  # 10 pips = 0.10
             step_size_price = step_size * 0.01
         elif "BTC" in position.symbol:
-            trail_distance_price = trail_distance * 1.0  # Points for Bitcoin
+            # For Bitcoin: 10 pips = 10 points
+            trail_distance_price = 10 * 1.0  # 10 points
             step_size_price = step_size * 1.0
         else:
-            trail_distance_price = trail_distance * 0.00001  # Pips for forex
-            step_size_price = step_size * 0.00001
+            # For forex: 10 pips standard
+            trail_distance_price = 10 * 0.0001  # 10 pips
+            step_size_price = step_size * 0.0001
         
         new_sl = None
         
@@ -451,23 +457,28 @@ def manage_trailing_stops():
         
         # Execute the trailing stop adjustment
         if new_sl:
-            print_info(f"🔄 Trailing SL for {position.symbol} {('BUY' if position.type == mt5.POSITION_TYPE_BUY else 'SELL')}")
+            profit_pips = abs(current_price - entry_price) / (0.01 if 'XAU' in position.symbol else 1.0 if 'BTC' in position.symbol else 0.0001)
+            print_info(f"🔄 DYNAMIC TRAILING STOP UPDATE for {position.symbol} {('BUY' if position.type == mt5.POSITION_TYPE_BUY else 'SELL')}")
+            print_info(f"  Profit: ${position.profit:.2f} | Movement: {profit_pips:.1f} pips")
             print_info(f"  Current Price: {current_price:.5f} | Old SL: {current_sl:.5f} | New SL: {new_sl:.5f}")
-            print_info(f"  Trail Distance: {trail_distance} {'pips' if 'XAU' in position.symbol else 'points'}")
+            print_info(f"  Trail Distance: 10 pips (keeping profit locked)")
             
-            if modify_trailing_sl(position.ticket, new_sl, position.tp, position.symbol):
-                print_success(f"✅ Trailing SL updated for {position.symbol}")
+            if modify_trailing_sl(position.ticket, new_sl, position.tp if position.tp else 0, position.symbol):
+                print_success(f"✅ Dynamic trailing stop updated - protecting ${position.profit:.2f} profit")
 
 def modify_trailing_sl(ticket: int, new_sl: float, tp: float, symbol: str):
-    """Modify position stop loss for trailing"""
+    """Modify position stop loss for dynamic trailing"""
     request = {
         "action": mt5.TRADE_ACTION_SLTP,
         "position": ticket,
         "sl": new_sl,
-        "tp": tp,
         "magic": MAGIC_NUMBER,
-        "comment": "Trailing stop"
+        "comment": "Dynamic trail @$60"
     }
+    
+    # Only add TP if it exists
+    if tp and tp > 0:
+        request["tp"] = tp
     
     result = mt5.order_send(request)
     
@@ -599,7 +610,8 @@ def auto_refresh_open_trades(signals: list):
         # Check if SL/TP should be adjusted
         if new_sl and new_tp:
             # Apply TP/SL adjustments using instrument-specific rules
-            # This applies the configured reduction/increase factors
+            # BTCUSD: SL ×4.7 (370% increase), TP ×0.15 (85% reduction)
+            # XAUUSD: SL ×1.8 (80% increase), TP ×0.40 (60% reduction)
             adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, new_entry or position.price_open, new_sl, new_tp)
             
             # Log the adjustment for transparency
@@ -609,9 +621,15 @@ def auto_refresh_open_trades(signals: list):
             adjusted_tp_dist = abs(adjusted_tp - (new_entry or position.price_open))
             
             adjustments = get_tp_sl_adjustment(symbol)
-            print_info(f"  📊 Applying {symbol} adjustment rules:")
-            print_info(f"     SL: {original_sl_dist:.1f} → {adjusted_sl_dist:.1f} pts (×{adjustments.get('sl_increase_factor', 1.0):.1f})")
-            print_info(f"     TP: {original_tp_dist:.1f} → {adjusted_tp_dist:.1f} pts (×{adjustments.get('tp_reduction_factor', 1.0):.2f})")
+            
+            # Display the specific adjustment rules being applied
+            if 'BTC' in symbol:
+                print_info(f"  📊 Applying BTCUSD rules: SL +370% (×4.7), TP -85% (×0.15)")
+            else:
+                print_info(f"  📊 Applying XAUUSD rules: SL +80% (×1.8), TP -60% (×0.40)")
+            
+            print_info(f"     DeepSeek SL: {original_sl_dist:.1f} pts → Adjusted SL: {adjusted_sl_dist:.1f} pts")
+            print_info(f"     DeepSeek TP: {original_tp_dist:.1f} pts → Adjusted TP: {adjusted_tp_dist:.1f} pts")
             
             # Check if current SL/TP are significantly different from new ones
             sl_diff = abs(position.sl - adjusted_sl) if position.sl else float('inf')

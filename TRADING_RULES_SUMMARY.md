@@ -7,6 +7,12 @@
 - **ONLY TRADE:** XAUUSD (Gold) and BTCUSD (Bitcoin)
 - **NO OTHER PAIRS ALLOWED**
 
+## ⚠️ CRITICAL RULE: TP/SL REPLACEMENT
+**EVERY DeepSeek suggestion is AUTOMATICALLY modified:**
+- **BTCUSD:** SL multiplied by 4.7, TP multiplied by 0.15
+- **XAUUSD:** SL multiplied by 1.8, TP multiplied by 0.40
+- **This applies to ALL operations: new trades, updates, auto-refresh**
+
 ---
 
 ## ⚡ CORE ENTRY REQUIREMENTS (ALL MUST PASS)
@@ -68,28 +74,32 @@
 - ⚠️ **REMOVED:** No min/max lot restrictions
 - ✅ **Broker Limits Only:** Only broker's natural limits apply
 
-### 3. **TP/SL ADJUSTMENTS - DIFFERENTIATED SCALPING MODE ⚠️⚠️⚠️**
+### 3. **TP/SL ADJUSTMENTS - EXTREME SCALPING MODE ⚠️⚠️⚠️**
 | Instrument | TP Factor | SL Factor | Min RR | Min TP | Min SL | Max SL |
 |------------|-----------|-----------|--------|--------|--------|--------|
-| XAUUSD     | 0.30× (70% reduction) | 2.0× (100% increase) | 0.15 | 5 pts | 30 pts | 150 pts |
-| BTCUSD     | 0.05× (95% reduction) | 4.5× (350% increase) | 0.03 | 10 pts | 200 pts | 1000 pts|
+| XAUUSD     | 0.40× (60% reduction) | 1.8× (80% increase) | 0.22 | 8 pts | 25 pts | 120 pts |
+| BTCUSD     | 0.15× (85% reduction) | 4.7× (370% increase) | 0.03 | 15 pts | 250 pts | 1200 pts|
 
 ### 4. **STOP LOSS MANAGEMENT**
 - ✅ **Automatic SL Placement:** If no SL exists, automatically places SL at breakeven when profit ≥ $50
 - ✅ **SL to Breakeven:** Move existing SL to breakeven when profit ≥ $50
 - ✅ **Breakeven Buffer:** +2 pips/points to avoid premature stops
-- ✅ **Trailing Stop:** Activate after SL moved to breakeven
-- ✅ **Trail Distance:** XAUUSD: 15 pips | BTCUSD: 40 points
-- ✅ **Trail Step:** 5 pips/points minimum movement
+- ⚡ **DYNAMIC TRAILING STOP:** Activates automatically when profit ≥ $60
+- ✅ **Trail Distance:** 10 pips for ALL instruments (XAUUSD & BTCUSD)
+- ✅ **Trail Step:** 1 pip minimum movement for precise tracking
+- ✅ **Dynamic Mode:** Trails continuously as price moves in favor
 - ✅ **Auto Check:** Every cycle monitors and adjusts
 - ✅ **One-Way Movement:** SL only moves in favorable direction
+- ✅ **Protection Level:** Keeps SL 10 pips behind current price
 
 ### 5. **AUTO-REFRESH SYSTEM** ⚡ NEW
 - ✅ **Direction Change Detection:** Closes trade if DeepSeek signal reverses
-- ✅ **SL/TP Auto-Update:** Adjusts levels based on new analysis
-- ✅ **Threshold Protection:** Only updates if change is significant
-- ✅ **Smart Logging:** Tracks all auto-refresh actions
-- ⚠️ **Example:** BUY position + new SELL signal = Auto-close position
+- ✅ **SL/TP Auto-Update:** ALWAYS replaces DeepSeek values with:
+  - **BTCUSD:** SL ×4.7 (+370%), TP ×0.15 (-85%)
+  - **XAUUSD:** SL ×1.8 (+80%), TP ×0.40 (-60%)
+- ✅ **Applied Everywhere:** New trades, position updates, auto-refresh
+- ✅ **Smart Logging:** Shows DeepSeek values → Adjusted values
+- ⚠️ **Example:** DeepSeek suggests SL:100 TP:50 → BTCUSD gets SL:470 TP:7.5
 
 ### 6. **EMERGENCY STOPS**
 - ❌ **Max Drawdown:** 10% → Stop all trading
@@ -227,8 +237,9 @@
 - **45** - Minutes news blocking window
 - **2** - Maximum concurrent trades
 - **20** - Maximum daily trades
-- **$50** - SL elevation threshold (implemented) ✅
-- **15/40** - Trailing distance (XAUUSD/BTCUSD pips/points) ✅
+- **$50** - SL to breakeven threshold ✅
+- **$60** - Dynamic trailing stop activation ⚡
+- **10** - Trailing distance in pips (all instruments) ✅
 - **5s** - Maximum trade execution timeout ✅
 - **10%** - Emergency stop drawdown
 - **5** - Consecutive losses trigger
@@ -299,7 +310,7 @@
 ---
 
 *Last Updated: 2025-08-19*
-*Protocol: Thanatos-Guardian-Prime v15.7-DIFFERENTIATED-SCALPING*
+*Protocol: Thanatos-Guardian-Prime v16.0-EXTREME-SCALPING*
 
 ---
 
@@ -325,13 +336,20 @@
    - **Spread:** Still not blocking trades
    - **Result:** More balanced approach between safety and opportunities
 
-4. **TP/SL Differentiated by Instrument:**
-   - **XAUUSD:** TP 30% (70% reduction), SL 200% (100% increase) - More balanced
-   - **BTCUSD:** TP 5% (95% reduction), SL 450% (350% increase) - Ultra-extreme
-   - **Result:** Instrument-specific risk profiles for optimized performance
+4. **TP/SL EXTREME ADJUSTMENT RULES - APPLIED TO ALL DEEPSEEK SUGGESTIONS:**
+   - **XAUUSD:** TP ×0.40 (60% reduction), SL ×1.8 (80% increase)
+   - **BTCUSD:** TP ×0.15 (85% reduction), SL ×4.7 (370% increase)
+   - **Universal Application:** EVERY DeepSeek suggestion is modified by these factors
+   - **Result:** Ultra-tight TPs with ultra-wide SLs for extreme scalping
 
 5. **Automatic Stop Loss Protection:**
    - **NEW:** Automatically places SL at breakeven when profit reaches $50
    - **Safety:** Protects positions that were opened without stop loss
    - **Buffer:** Adds 2 pips/points buffer to avoid premature stops
    - **Result:** No position remains unprotected once profitable
+
+6. **Dynamic Trailing Stop at $60:**
+   - **NEW:** Activates dynamic trailing when profit reaches $60
+   - **Trail Distance:** Fixed 10 pips for all instruments
+   - **Precision:** 1-pip step size for smooth trailing
+   - **Result:** Locks in profits while allowing upside potential

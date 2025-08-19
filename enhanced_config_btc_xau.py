@@ -105,28 +105,28 @@ RANGE_DETECTION_CONFIG = {
 # ================================================================
 
 TP_SL_ADJUSTMENT_CONFIG = {
-    'tp_reduction_factor': 0.15,         # Default TP (overridden per instrument)
+    'tp_reduction_factor': 0.50,         # Default TP (overridden per instrument)
     'sl_increase_factor': 3.0,           # Default SL (overridden per instrument)
-    'min_risk_reward_ratio': 0.08,       # Extremely low minimum RR for ultra-scalping
+    'min_risk_reward_ratio': 0.20,       # Low minimum RR for conservative trading
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
-            'tp_reduction_factor': 0.30,  # Gold: TP = 30% of DeepSeek (70% reduction)
-            'sl_increase_factor': 2.0,    # Gold: SL = 200% of DeepSeek (100% increase)
-            'min_risk_reward_ratio': 0.15, # Gold: Moderate RR for balanced approach
-            'max_sl_points': 150,         # Gold: moderate max SL
-            'min_tp_points': 5,           # Gold: small min TP for reasonable profits
-            'min_sl_points': 30           # Gold: moderate min SL for safety
+            'tp_reduction_factor': 0.40,  # Gold: TP = 40% of DeepSeek (60% reduction - max possible)
+            'sl_increase_factor': 1.8,    # Gold: SL = 180% of DeepSeek (80% increase)
+            'min_risk_reward_ratio': 0.22, # Gold: Moderate RR for balanced approach
+            'max_sl_points': 120,         # Gold: moderate max SL
+            'min_tp_points': 8,           # Gold: small min TP
+            'min_sl_points': 25           # Gold: moderate min SL
         },
         'BTCUSD': {
-            'tp_reduction_factor': 0.05,  # Bitcoin: TP = 5% of DeepSeek (95% reduction) - ultra tight
-            'sl_increase_factor': 4.5,    # Bitcoin: SL = 450% of DeepSeek (350% increase) - ultra wide
-            'min_risk_reward_ratio': 0.03, # Bitcoin: Extremely low RR for scalping approach
-            'max_sl_points': 1000,        # Bitcoin: increased max SL for ultra-wide stops
-            'min_tp_points': 10,          # Bitcoin: extremely small min TP for quick profits
-            'min_sl_points': 200          # Bitcoin: increased min SL for ultra-safe stops
+            'tp_reduction_factor': 0.15,  # Bitcoin: TP = 15% of DeepSeek (85% reduction)
+            'sl_increase_factor': 4.7,    # Bitcoin: SL = 470% of DeepSeek (370% increase) - extreme
+            'min_risk_reward_ratio': 0.03, # Bitcoin: Ultra-low RR for extreme scalping
+            'max_sl_points': 1200,        # Bitcoin: increased max SL for extreme stops
+            'min_tp_points': 15,          # Bitcoin: very small min TP
+            'min_sl_points': 250          # Bitcoin: increased min SL for ultra-safety
         }
     },
     
@@ -173,14 +173,16 @@ RISK_MANAGEMENT_CONFIG = {
     
     # Trailing stop
     'trailing_stop': {
-        'enabled': True,                 # Enable trailing stop after breakeven
-        'activation_profit': 50,         # Activate after +$50 profit
+        'enabled': True,                 # Enable trailing stop
+        'activation_profit': 60,         # Activate after +$60 profit
         'trail_distance_points': {
-            'XAUUSD': 15,               # Trail 15 points for gold
-            'BTCUSD': 40                # Trail 40 points for Bitcoin
+            'XAUUSD': 10,               # Trail 10 pips for gold (converted to points)
+            'BTCUSD': 10                # Trail 10 pips for Bitcoin (converted to points)
         },
-        'step_size': 5,                 # Adjustment in steps of 5 points
-        'max_trail_distance': 100      # Max trailing distance
+        'step_size': 1,                 # Adjustment in steps of 1 point for precision
+        'max_trail_distance': 100,     # Max trailing distance
+        'dynamic_mode': True,           # Enable dynamic trailing
+        'update_frequency': 'every_tick' # Update on every price change
     },
     
     # Emergency limits
