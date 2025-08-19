@@ -258,21 +258,32 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     spread = tick.ask - tick.bid if tick else 0
     spread_ok = spread < 0.0010 if symbol == "EURUSD" else spread < 10 if "XAU" in symbol else True
     
-    # Build the prompt with the exact template
+    # Determine session weight for adaptive confidence
+    session_weight = 0
+    if technical_data['sessions']['active'] == "New York" and technical_data['sessions']['ny_open_boost']:
+        session_weight = 3
+    elif technical_data['sessions']['active'] == "London":
+        session_weight = 2
+    elif technical_data['sessions']['active'] == "Asian":
+        session_weight = -2
+    
+    # Build the prompt with the new template
     prompt = f"""You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.
-Analyze this market data and return STRICT YAML response.
+Analyze this market data and return STRICT YAML response following the new enhanced format.
 
 meta:
   version: "15.2-MAXPROTECT"
   codename: "Thanatos-Guardian-Prime"
+  input_requirements: "✅ VALID (H1/M15/M5 with 30+ candles, current time provided)"
   response_rules: "STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED"
+  adaptive_weighting: "Apply adaptive weight to confidence based on session (NY Open +3%, London +2%, Asian -2%)"
   min_confidence_threshold: "78%"
 
 inputs:
   symbol: "{symbol}"
   timestamp_cet: "{technical_data['timestamp_cet']}"
   price: {technical_data['price']}
-  sessions: {{active: "{technical_data['sessions']['active']}", ny_open_boost: {str(technical_data['sessions']['ny_open_boost']).lower()}}}
+  sessions: {{active: "{technical_data['sessions']['active']}", ny_open_boost: {str(technical_data['sessions']['ny_open_boost']).lower()}, weight: {session_weight}}}
   measures:
     adx14_h1: {technical_data['measures']['adx14_h1']}
     atr_h1_points: {technical_data['measures']['atr_h1_points']}
@@ -291,34 +302,51 @@ inputs:
     active_trades: {len(open_positions_map())}
     equity_usd: {account_info.equity}
     red_news_window: {str(red_news_window).lower()}
-    uk_close_block: {str(uk_close_block).lower()}
     spread_ok: {str(spread_ok).lower()}
-    slippage_guard_ok: true
 
-Based on all filters and the anti-range rules, provide a trading decision.
+Based on all filters and anti-range rules, provide a trading decision.
 Return ONLY this YAML structure:
 
 action: "BUY" or "SELL" or "NO_TRADE"
 confidence: <float 0-100>
+confidence_breakdown:
+  quantum: <float 0-100>
+  tactical: <float 0-100>
+  psychological: <float 0-100>
+  session_adjustment: {session_weight}
 entry: <float if BUY/SELL>
 sl: <float if BUY/SELL>
 tp1: <float if BUY/SELL>
 tp2: <float if BUY/SELL>
 tp3: <float if BUY/SELL>
+rr_ratios:
+  tp1_rr: <float>
+  tp2_rr: <float>
+  tp3_rr: <float>
+time_projection: <string like "3h05m">
 analysis: <string explaining decision>
 guardian_status:
   anti_range_pass: <true/false>
   confluence_pass: <true/false>
   max_protect_pass: <true/false>
+  session_ok: <true/false>
+  structure_ok: <true/false>
+  flow_ok: <true/false>
+alerts: <list of key alerts>
+key_levels:
+  support: <float>
+  resistance: <float>
 
 Apply all rules:
 - ADX > 20 required for trend
 - ATR% >= 0.35% required for volatility
 - BB width >= 0.6% required
 - No trade if last 15 H1 candles in consolidation
-- No trade during news
+- No trade during high-impact news
 - No trade if active_trades >= 2
-- Minimum 78% confidence required
+- Minimum 78% confidence required (after session adjustment)
+- MaxProtect: Force NO_TRADE if ≥2 timeframes conflict
+- Triple validation required before final output
 """
     
     payload = {
@@ -450,18 +478,23 @@ def cycle_once():
             # Get AI analysis
             analysis = deepseek_analyze(symbol, tech_data, account)
             
-            # Add to signals list
+            # Add to signals list with new fields
             signals.append({
                 "symbol": symbol,
                 "action": analysis.get("action", "NO_TRADE"),
                 "confidence": float(analysis.get("confidence", 0)),
+                "confidence_breakdown": analysis.get("confidence_breakdown", {}),
                 "entry": analysis.get("entry"),
                 "sl": analysis.get("sl"),
                 "tp": analysis.get("tp1"),  # Use first TP
                 "tp2": analysis.get("tp2"),
                 "tp3": analysis.get("tp3"),
+                "rr_ratios": analysis.get("rr_ratios", {}),
+                "time_projection": analysis.get("time_projection", ""),
                 "analysis": analysis.get("analysis", ""),
-                "guardian": analysis.get("guardian_status", {})
+                "guardian": analysis.get("guardian_status", {}),
+                "alerts": analysis.get("alerts", []),
+                "key_levels": analysis.get("key_levels", {})
             })
             
         except Exception as e:
@@ -482,21 +515,70 @@ def cycle_once():
             sig.get("entry"), sig.get("sl"), sig.get("tp")
         )
         
+        # Display confidence breakdown if available
+        breakdown = sig.get("confidence_breakdown", {})
+        if breakdown:
+            print(f"  {Colors.WHITE}Confidence Breakdown:{Colors.RESET}")
+            print(f"    Quantum: {Colors.CYAN}{breakdown.get('quantum', 0)}%{Colors.RESET}")
+            print(f"    Tactical: {Colors.CYAN}{breakdown.get('tactical', 0)}%{Colors.RESET}")
+            print(f"    Psychological: {Colors.CYAN}{breakdown.get('psychological', 0)}%{Colors.RESET}")
+            if breakdown.get('session_adjustment'):
+                adj_color = Colors.GREEN if breakdown['session_adjustment'] > 0 else Colors.YELLOW if breakdown['session_adjustment'] < 0 else Colors.WHITE
+                print(f"    Session Adjustment: {adj_color}{breakdown['session_adjustment']:+d}%{Colors.RESET}")
+        
+        # Display R:R ratios if available
+        rr = sig.get("rr_ratios", {})
+        if rr and any(rr.values()):
+            print(f"  {Colors.WHITE}Risk:Reward Ratios:{Colors.RESET}")
+            if rr.get('tp1_rr'): print(f"    TP1: {Colors.CYAN}1:{rr['tp1_rr']:.1f}{Colors.RESET}")
+            if rr.get('tp2_rr'): print(f"    TP2: {Colors.CYAN}1:{rr['tp2_rr']:.1f}{Colors.RESET}")
+            if rr.get('tp3_rr'): print(f"    TP3: {Colors.CYAN}1:{rr['tp3_rr']:.1f}{Colors.RESET}")
+        
+        # Display time projection if available
+        if sig.get("time_projection"):
+            print(f"  {Colors.WHITE}Time Projection: {Colors.CYAN}{sig['time_projection']}{Colors.RESET}")
+        
         if sig.get("analysis"):
             print(f"  {Colors.DIM}Analysis: {sig['analysis']}{Colors.RESET}")
+        
+        # Display alerts if any
+        alerts = sig.get("alerts", [])
+        if alerts:
+            print(f"  {Colors.YELLOW}Alerts:{Colors.RESET}")
+            for alert in alerts:
+                print(f"    • {alert}")
+        
+        # Display key levels
+        levels = sig.get("key_levels", {})
+        if levels:
+            print(f"  {Colors.WHITE}Key Levels:{Colors.RESET}")
+            if levels.get('support'): print(f"    Support: {Colors.RED}{levels['support']}{Colors.RESET}")
+            if levels.get('resistance'): print(f"    Resistance: {Colors.GREEN}{levels['resistance']}{Colors.RESET}")
         
         # Display guardian status
         guardian = sig.get("guardian", {})
         if guardian:
-            status_color = Colors.GREEN if all([
+            # Check all guardian conditions
+            all_pass = all([
                 guardian.get("anti_range_pass", False),
                 guardian.get("confluence_pass", False),
-                guardian.get("max_protect_pass", False)
-            ]) else Colors.RED
+                guardian.get("max_protect_pass", False),
+                guardian.get("session_ok", False),
+                guardian.get("structure_ok", False),
+                guardian.get("flow_ok", False)
+            ])
+            status_color = Colors.GREEN if all_pass else Colors.RED
+            
             print(f"  {Colors.WHITE}Guardian Filters:{Colors.RESET}")
             print(f"    Anti-Range: {status_color}{'PASS' if guardian.get('anti_range_pass') else 'FAIL'}{Colors.RESET}")
             print(f"    Confluence: {status_color}{'PASS' if guardian.get('confluence_pass') else 'FAIL'}{Colors.RESET}")
             print(f"    MaxProtect: {status_color}{'PASS' if guardian.get('max_protect_pass') else 'FAIL'}{Colors.RESET}")
+            if 'session_ok' in guardian:
+                print(f"    Session: {status_color}{'PASS' if guardian.get('session_ok') else 'FAIL'}{Colors.RESET}")
+            if 'structure_ok' in guardian:
+                print(f"    Structure: {status_color}{'PASS' if guardian.get('structure_ok') else 'FAIL'}{Colors.RESET}")
+            if 'flow_ok' in guardian:
+                print(f"    Flow: {status_color}{'PASS' if guardian.get('flow_ok') else 'FAIL'}{Colors.RESET}")
         
         # Decision logic
         decision_id = str(uuid.uuid4())[:8]
