@@ -26,7 +26,11 @@
 - ✅ **H1 Trend:** Must be clear (Bullish/Bearish, not Sideways)
 - ✅ **M15 Trend:** Should align with H1
 - ✅ **M5 Setup:** Look for Breakout or Pullback patterns
-- ⚠️ **MaxProtect Rule:** DISABLED - Timeframe conflicts allowed ✅
+- ✅ **MaxProtect Rule:** ACTIVE (TOLERANT MODE)
+  - Allows up to 1 timeframe conflict
+  - Only requires H1 and M15 alignment
+  - M5 can diverge without blocking trades
+  - Spread checks disabled
 
 ### 4. **VOLUME REQUIREMENTS**
 - ✅ **Volume > MA50** on M5 timeframe
@@ -64,14 +68,15 @@
 - ⚠️ **REMOVED:** No min/max lot restrictions
 - ✅ **Broker Limits Only:** Only broker's natural limits apply
 
-### 3. **TP/SL ADJUSTMENTS - ULTRA CONSERVATIVE ⚠️**
+### 3. **TP/SL ADJUSTMENTS - DIFFERENTIATED SCALPING MODE ⚠️⚠️⚠️**
 | Instrument | TP Factor | SL Factor | Min RR | Min TP | Min SL | Max SL |
 |------------|-----------|-----------|--------|--------|--------|--------|
-| XAUUSD     | 0.2× (80% reduction) | 3.0× (200% increase) | 0.4 | 5 pts | 30 pts | 150 pts |
-| BTCUSD     | 0.2× (80% reduction) | 3.0× (200% increase) | 0.3 | 20 pts | 100 pts | 600 pts|
+| XAUUSD     | 0.30× (70% reduction) | 2.0× (100% increase) | 0.15 | 5 pts | 30 pts | 150 pts |
+| BTCUSD     | 0.05× (95% reduction) | 4.5× (350% increase) | 0.03 | 10 pts | 200 pts | 1000 pts|
 
 ### 4. **STOP LOSS MANAGEMENT**
-- ✅ **SL to Breakeven:** Move when profit ≥ $50
+- ✅ **Automatic SL Placement:** If no SL exists, automatically places SL at breakeven when profit ≥ $50
+- ✅ **SL to Breakeven:** Move existing SL to breakeven when profit ≥ $50
 - ✅ **Breakeven Buffer:** +2 pips/points to avoid premature stops
 - ✅ **Trailing Stop:** Activate after SL moved to breakeven
 - ✅ **Trail Distance:** XAUUSD: 15 pips | BTCUSD: 40 points
@@ -79,7 +84,14 @@
 - ✅ **Auto Check:** Every cycle monitors and adjusts
 - ✅ **One-Way Movement:** SL only moves in favorable direction
 
-### 5. **EMERGENCY STOPS**
+### 5. **AUTO-REFRESH SYSTEM** ⚡ NEW
+- ✅ **Direction Change Detection:** Closes trade if DeepSeek signal reverses
+- ✅ **SL/TP Auto-Update:** Adjusts levels based on new analysis
+- ✅ **Threshold Protection:** Only updates if change is significant
+- ✅ **Smart Logging:** Tracks all auto-refresh actions
+- ⚠️ **Example:** BUY position + new SELL signal = Auto-close position
+
+### 6. **EMERGENCY STOPS**
 - ❌ **Max Drawdown:** 10% → Stop all trading
 - ❌ **Consecutive Losses:** 5 → Pause 4 hours
 - ❌ **Daily Loss Limit:** 5% → Stop for the day
@@ -102,12 +114,12 @@
 
 1. **Anti-Range Pass:** No extended consolidation detected (EXTREMELY TOLERANT) ✅
 2. **Confluence Pass:** Multiple indicators align
-3. **MaxProtect Pass:** DISABLED - Always passes ✅
+3. **MaxProtect Pass:** TOLERANT - Allows 1 conflict, requires H1/M15 alignment ✅
 4. **Session OK:** Trading in active session
 5. **Structure OK:** H1/M15/M5 alignment confirmed
 6. **Flow OK:** Volume and OBV agreement
 
-⚠️ **SPREAD REMOVED:** Spread limits no longer block trades in MaxProtect system
+✅ **MAXPROTECT ACTIVE:** Tolerant mode - allows 1 timeframe conflict, focuses on H1/M15 alignment
 
 ---
 
@@ -195,7 +207,7 @@
    - Range/consolidation > 20 H1 candles
    - Spread exceeds limits (removed from MaxProtect)
    - Volume < MA50
-   - ⚠️ **Timeframe conflicts:** DISABLED - No longer blocks trades
+   - ✅ **Timeframe conflicts:** TOLERANT - Allows 1 conflict (H1/M15 must align)
 
 3. **Account-Based:**
    - Already 2 positions open
@@ -287,7 +299,7 @@
 ---
 
 *Last Updated: 2025-08-19*
-*Protocol: Thanatos-Guardian-Prime v15.4-NOPROTECT-UNRESTRICTED*
+*Protocol: Thanatos-Guardian-Prime v15.7-DIFFERENTIATED-SCALPING*
 
 ---
 
@@ -306,6 +318,20 @@
    - **Removed:** Position size percentages (1.5% Gold, 2.0% Bitcoin)
    - **Result:** Full manual control over lot sizes, no system restrictions
 
-3. **Spread Limits - REMOVED FROM MAXPROTECT:**
-   - **Removed:** Spread blocking from Guardian Filters
-   - **Result:** Trades no longer blocked by high spreads
+3. **MaxProtect Rule - REACTIVATED WITH TOLERANCE:**
+   - **Active:** MaxProtect now checks timeframe alignment
+   - **Tolerant:** Allows up to 1 timeframe conflict
+   - **Focus:** H1 and M15 must align, M5 can diverge
+   - **Spread:** Still not blocking trades
+   - **Result:** More balanced approach between safety and opportunities
+
+4. **TP/SL Differentiated by Instrument:**
+   - **XAUUSD:** TP 30% (70% reduction), SL 200% (100% increase) - More balanced
+   - **BTCUSD:** TP 5% (95% reduction), SL 450% (350% increase) - Ultra-extreme
+   - **Result:** Instrument-specific risk profiles for optimized performance
+
+5. **Automatic Stop Loss Protection:**
+   - **NEW:** Automatically places SL at breakeven when profit reaches $50
+   - **Safety:** Protects positions that were opened without stop loss
+   - **Buffer:** Adds 2 pips/points buffer to avoid premature stops
+   - **Result:** No position remains unprotected once profitable

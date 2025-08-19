@@ -105,28 +105,28 @@ RANGE_DETECTION_CONFIG = {
 # ================================================================
 
 TP_SL_ADJUSTMENT_CONFIG = {
-    'tp_reduction_factor': 0.2,          # TP = 20% of DeepSeek value (80% reduction)
-    'sl_increase_factor': 3.0,           # SL = 300% of DeepSeek value (200% increase)
-    'min_risk_reward_ratio': 0.5,        # Lower minimum RR due to conservative TP/SL
+    'tp_reduction_factor': 0.15,         # Default TP (overridden per instrument)
+    'sl_increase_factor': 3.0,           # Default SL (overridden per instrument)
+    'min_risk_reward_ratio': 0.08,       # Extremely low minimum RR for ultra-scalping
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
-            'tp_reduction_factor': 0.2,   # Gold: TP = 20% of DeepSeek (80% reduction)
-            'sl_increase_factor': 3.0,    # Gold: SL = 300% of DeepSeek (200% increase)
-            'min_risk_reward_ratio': 0.4, # Gold: Lower RR due to conservative approach
-            'max_sl_points': 150,         # Gold: increased max SL for wider stops
-            'min_tp_points': 5,           # Gold: reduced min TP due to conservative target
-            'min_sl_points': 30           # Gold: increased min SL for safer stops
+            'tp_reduction_factor': 0.30,  # Gold: TP = 30% of DeepSeek (70% reduction)
+            'sl_increase_factor': 2.0,    # Gold: SL = 200% of DeepSeek (100% increase)
+            'min_risk_reward_ratio': 0.15, # Gold: Moderate RR for balanced approach
+            'max_sl_points': 150,         # Gold: moderate max SL
+            'min_tp_points': 5,           # Gold: small min TP for reasonable profits
+            'min_sl_points': 30           # Gold: moderate min SL for safety
         },
         'BTCUSD': {
-            'tp_reduction_factor': 0.2,   # Bitcoin: TP = 20% of DeepSeek (80% reduction)
-            'sl_increase_factor': 3.0,    # Bitcoin: SL = 300% of DeepSeek (200% increase)
-            'min_risk_reward_ratio': 0.3, # Bitcoin: Lower RR due to conservative approach
-            'max_sl_points': 600,         # Bitcoin: increased max SL for wider stops
-            'min_tp_points': 20,          # Bitcoin: reduced min TP due to conservative target
-            'min_sl_points': 100          # Bitcoin: increased min SL for safer stops
+            'tp_reduction_factor': 0.05,  # Bitcoin: TP = 5% of DeepSeek (95% reduction) - ultra tight
+            'sl_increase_factor': 4.5,    # Bitcoin: SL = 450% of DeepSeek (350% increase) - ultra wide
+            'min_risk_reward_ratio': 0.03, # Bitcoin: Extremely low RR for scalping approach
+            'max_sl_points': 1000,        # Bitcoin: increased max SL for ultra-wide stops
+            'min_tp_points': 10,          # Bitcoin: extremely small min TP for quick profits
+            'min_sl_points': 200          # Bitcoin: increased min SL for ultra-safe stops
         }
     },
     

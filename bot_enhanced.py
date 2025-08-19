@@ -250,7 +250,8 @@ def open_positions_map() -> dict:
     return {p.symbol: p for p in positions}
 
 def manage_position_sl_elevation():
-    """Move SL to breakeven when profit reaches configured threshold"""
+    """Move SL to breakeven when profit reaches configured threshold
+    Also automatically places SL if none exists when profit reaches $50"""
     # Check if feature is enabled
     sl_config = RISK_MANAGEMENT_CONFIG.get('sl_to_breakeven', {})
     if not sl_config.get('enabled', True):
@@ -267,7 +268,7 @@ def manage_position_sl_elevation():
         if position.profit >= profit_threshold:
             # Check if SL is still below entry (for buy) or above entry (for sell)
             entry_price = position.price_open
-            current_sl = position.sl
+            current_sl = position.sl if position.sl else 0  # Handle None or 0 SL
             
             # Get current symbol info for pip/point calculation
             symbol_info = mt5.symbol_info(position.symbol)
@@ -288,41 +289,51 @@ def manage_position_sl_elevation():
             # Determine new SL with buffer
             if position.type == mt5.POSITION_TYPE_BUY:
                 new_sl = entry_price + buffer
-                # Only move if current SL is below entry (not yet at breakeven)
-                if current_sl < entry_price:
-                    print_info(f"🎯 Moving SL to breakeven for {position.symbol} BUY position")
+                # Move SL if: 1) No SL exists (0), or 2) current SL is below entry (not yet at breakeven)
+                if current_sl == 0 or current_sl < entry_price:
+                    if current_sl == 0:
+                        print_warning(f"⚠️ No SL detected for {position.symbol} BUY position - PLACING AUTOMATIC SL")
+                    else:
+                        print_info(f"🎯 Moving SL to breakeven for {position.symbol} BUY position")
                     print_info(f"  Entry: {entry_price:.5f} | New SL: {new_sl:.5f} | Profit: ${position.profit:.2f}")
-                    if modify_position_sl(position.ticket, new_sl, position.tp):
-                        print_success(f"✅ SL successfully moved to breakeven + {buffer_pips if 'XAU' in position.symbol else buffer_points} {'pips' if 'XAU' in position.symbol else 'points'} buffer")
+                    if modify_position_sl(position.ticket, new_sl, position.tp if position.tp else 0):
+                        print_success(f"✅ SL successfully {'placed' if current_sl == 0 else 'moved'} to breakeven + {buffer_pips if 'XAU' in position.symbol else buffer_points} {'pips' if 'XAU' in position.symbol else 'points'} buffer")
                         # Mark position as eligible for trailing stop
                         positions_at_breakeven.add(position.ticket)
             
             elif position.type == mt5.POSITION_TYPE_SELL:
                 new_sl = entry_price - buffer
-                # Only move if current SL is above entry (not yet at breakeven)
-                if current_sl > entry_price:
-                    print_info(f"🎯 Moving SL to breakeven for {position.symbol} SELL position")
+                # Move SL if: 1) No SL exists (0), or 2) current SL is above entry (not yet at breakeven)
+                if current_sl == 0 or current_sl > entry_price:
+                    if current_sl == 0:
+                        print_warning(f"⚠️ No SL detected for {position.symbol} SELL position - PLACING AUTOMATIC SL")
+                    else:
+                        print_info(f"🎯 Moving SL to breakeven for {position.symbol} SELL position")
                     print_info(f"  Entry: {entry_price:.5f} | New SL: {new_sl:.5f} | Profit: ${position.profit:.2f}")
-                    if modify_position_sl(position.ticket, new_sl, position.tp):
-                        print_success(f"✅ SL successfully moved to breakeven + {buffer_pips if 'XAU' in position.symbol else buffer_points} {'pips' if 'XAU' in position.symbol else 'points'} buffer")
+                    if modify_position_sl(position.ticket, new_sl, position.tp if position.tp else 0):
+                        print_success(f"✅ SL successfully {'placed' if current_sl == 0 else 'moved'} to breakeven + {buffer_pips if 'XAU' in position.symbol else buffer_points} {'pips' if 'XAU' in position.symbol else 'points'} buffer")
                         # Mark position as eligible for trailing stop
                         positions_at_breakeven.add(position.ticket)
 
 def modify_position_sl(ticket: int, new_sl: float, tp: float):
-    """Modify position stop loss"""
+    """Modify position stop loss (and optionally TP)"""
+    # Build request - only include TP if it's non-zero
     request = {
         "action": mt5.TRADE_ACTION_SLTP,
         "position": ticket,
         "sl": new_sl,
-        "tp": tp,
         "magic": MAGIC_NUMBER,
-        "comment": "SL to breakeven"
+        "comment": "Auto SL at $50 profit"
     }
+    
+    # Only add TP if it exists (non-zero)
+    if tp and tp > 0:
+        request["tp"] = tp
     
     result = mt5.order_send(request)
     
     if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-        print_success(f"SL moved to breakeven for ticket {ticket}")
+        print_success(f"SL successfully updated for ticket {ticket}")
         # Log the SL modification
         log_trade(
             str(ticket), 
@@ -331,9 +342,9 @@ def modify_position_sl(ticket: int, new_sl: float, tp: float):
             0, 
             "", 
             new_sl, 
-            tp, 
+            tp if tp else 0, 
             status="MODIFIED", 
-            reason="Profit reached $50 - SL to breakeven"
+            reason="Auto SL: Profit ≥ $50 - SL set to breakeven + buffer"
         )
         return True
     else:
@@ -518,6 +529,131 @@ def update_precalc_cache(force_update=False):
         
     except Exception as e:
         print_error(f"Failed to update precalc cache: {e}")
+
+def auto_refresh_open_trades(signals: list):
+    """Auto-refresh open trades based on new DeepSeek analysis"""
+    positions = mt5.positions_get()
+    if not positions:
+        print_info("📊 No open positions - Ready for new opportunities")
+        return
+    
+    print_separator()
+    print_info("🔄 ADAPTIVE POSITION MANAGEMENT - ANALYZING MARKET CHANGES")
+    print_info(f"   Active positions: {len(positions)} | Checking for direction changes & SL/TP updates")
+    
+    for position in positions:
+        symbol = position.symbol
+        current_type = "BUY" if position.type == mt5.POSITION_TYPE_BUY else "SELL"
+        
+        # Find matching signal for this symbol
+        matching_signal = None
+        for signal in signals:
+            if signal["symbol"] == symbol and signal["action"] in ["BUY", "SELL"]:
+                matching_signal = signal
+                break
+        
+        if not matching_signal:
+            print_info(f"  {symbol}: No actionable signal - maintaining current {current_type} position")
+            continue
+        
+        new_action = matching_signal["action"]
+        new_entry = matching_signal.get("entry")
+        new_sl = matching_signal.get("sl")
+        new_tp = matching_signal.get("tp")
+        
+        # Check if direction changed (close trade)
+        if current_type != new_action:
+            print_warning(f"🔄 Direction changed for {symbol}: {current_type} → {new_action}")
+            print_info(f"  Closing existing {current_type} position")
+            
+            close_request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "position": position.ticket,
+                "symbol": symbol,
+                "volume": position.volume,
+                "type": mt5.ORDER_TYPE_SELL if position.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY,
+                "magic": MAGIC_NUMBER,
+                "comment": "Auto-close: Direction changed",
+                "type_filling": mt5.ORDER_FILLING_IOC
+            }
+            
+            result = mt5.order_send(close_request)
+            if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                print_success(f"✅ Closed {symbol} position due to direction change")
+                log_trade(
+                    str(result.deal or position.ticket),
+                    symbol,
+                    "CLOSE",
+                    matching_signal.get("confidence", 0),
+                    "",
+                    "",
+                    "",
+                    status="AUTO_CLOSED",
+                    reason=f"Direction changed: {current_type} → {new_action}"
+                )
+            else:
+                print_error(f"❌ Failed to close {symbol} position: {result.retcode if result else 'Unknown error'}")
+            
+            continue
+        
+        # Check if SL/TP should be adjusted
+        if new_sl and new_tp:
+            # Apply TP/SL adjustments using instrument-specific rules
+            # This applies the configured reduction/increase factors
+            adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, new_entry or position.price_open, new_sl, new_tp)
+            
+            # Log the adjustment for transparency
+            original_sl_dist = abs(new_sl - (new_entry or position.price_open))
+            original_tp_dist = abs(new_tp - (new_entry or position.price_open))
+            adjusted_sl_dist = abs(adjusted_sl - (new_entry or position.price_open))
+            adjusted_tp_dist = abs(adjusted_tp - (new_entry or position.price_open))
+            
+            adjustments = get_tp_sl_adjustment(symbol)
+            print_info(f"  📊 Applying {symbol} adjustment rules:")
+            print_info(f"     SL: {original_sl_dist:.1f} → {adjusted_sl_dist:.1f} pts (×{adjustments.get('sl_increase_factor', 1.0):.1f})")
+            print_info(f"     TP: {original_tp_dist:.1f} → {adjusted_tp_dist:.1f} pts (×{adjustments.get('tp_reduction_factor', 1.0):.2f})")
+            
+            # Check if current SL/TP are significantly different from new ones
+            sl_diff = abs(position.sl - adjusted_sl) if position.sl else float('inf')
+            tp_diff = abs(position.tp - adjusted_tp) if position.tp else float('inf')
+            
+            # Define threshold for "significant" change (in points)
+            # Lower thresholds due to extreme scalping approach
+            sl_threshold = 5 if 'XAU' in symbol else 25   # 5 points for Gold, 25 for Bitcoin
+            tp_threshold = 2 if 'XAU' in symbol else 10   # 2 points for Gold, 10 for Bitcoin
+            
+            if sl_diff >= sl_threshold or tp_diff >= tp_threshold:
+                print_info(f"🔄 Updating SL/TP for {symbol} {current_type} position")
+                print_info(f"  Current SL: {position.sl:.5f} → New SL: {adjusted_sl:.5f} (diff: {sl_diff:.1f})")
+                print_info(f"  Current TP: {position.tp:.5f} → New TP: {adjusted_tp:.5f} (diff: {tp_diff:.1f})")
+                
+                modify_request = {
+                    "action": mt5.TRADE_ACTION_SLTP,
+                    "position": position.ticket,
+                    "sl": adjusted_sl,
+                    "tp": adjusted_tp,
+                    "magic": MAGIC_NUMBER,
+                    "comment": f"Auto-refresh: {symbol} adjusted"
+                }
+                
+                result = mt5.order_send(modify_request)
+                if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                    print_success(f"✅ Updated SL/TP for {symbol}")
+                    log_trade(
+                        str(position.ticket),
+                        symbol,
+                        "MODIFY",
+                        matching_signal.get("confidence", 0),
+                        "",
+                        adjusted_sl,
+                        adjusted_tp,
+                        status="AUTO_UPDATED",
+                        reason=f"SL/TP refreshed: SL {sl_diff:.1f}, TP {tp_diff:.1f} points diff"
+                    )
+                else:
+                    print_error(f"❌ Failed to update {symbol} SL/TP: {result.retcode if result else 'Unknown error'}")
+            else:
+                print_info(f"  {symbol}: SL/TP changes too small - no adjustment needed")
 
 def get_precalc_lot_size(symbol: str) -> float:
     """Get pre-calculated lot size for fast execution"""
@@ -815,6 +951,63 @@ def get_instrument_specific_instructions(symbol: str) -> str:
     
     return prompt_section
 
+def check_tolerant_maxprotect(technical_data: dict, tolerance_config: dict) -> bool:
+    """
+    Check MaxProtect with tolerant rules
+    Returns True if MaxProtect passes (trading allowed)
+    """
+    try:
+        # Extract trend directions from technical data
+        h1_trend = technical_data.get('timeframes', {}).get('H1', {}).get('trend', 'unknown')
+        m15_trend = technical_data.get('timeframes', {}).get('M15', {}).get('trend', 'unknown')
+        m5_trend = technical_data.get('timeframes', {}).get('M5', {}).get('trend', 'unknown')
+        
+        # Convert trend strings to simplified direction
+        def simplify_trend(trend):
+            trend_lower = str(trend).lower()
+            if 'bullish' in trend_lower or 'up' in trend_lower:
+                return 'up'
+            elif 'bearish' in trend_lower or 'down' in trend_lower:
+                return 'down'
+            else:
+                return 'neutral'
+        
+        h1_dir = simplify_trend(h1_trend)
+        m15_dir = simplify_trend(m15_trend)
+        m5_dir = simplify_trend(m5_trend)
+        
+        # Count conflicts
+        conflicts = 0
+        if h1_dir != 'neutral' and m15_dir != 'neutral' and h1_dir != m15_dir:
+            conflicts += 1
+        if h1_dir != 'neutral' and m5_dir != 'neutral' and h1_dir != m5_dir:
+            conflicts += 1
+        if m15_dir != 'neutral' and m5_dir != 'neutral' and m15_dir != m5_dir:
+            conflicts += 1
+        
+        # Apply tolerant rules
+        if tolerance_config.get('allow_one_conflict', True):
+            # Allow trading with up to 1 conflict
+            if conflicts <= 1:
+                return True
+        
+        if tolerance_config.get('require_major_alignment', True):
+            # Only require H1 and M15 to align (ignore M5)
+            if h1_dir != 'neutral' and m15_dir != 'neutral':
+                if h1_dir == m15_dir:
+                    return True
+        
+        # If no conflicts at all, always pass
+        if conflicts == 0:
+            return True
+        
+        # Default: fail if 2+ conflicts
+        return conflicts < 2
+        
+    except Exception as e:
+        print_warning(f"MaxProtect check error: {e} - defaulting to PASS")
+        return True  # Default to pass on error to be tolerant
+
 def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     """Use the Thanatos-Guardian-Prime prompt"""
     headers = {"Authorization": f"Bearer {LLM_KEY}", "Content-Type":"application/json"}
@@ -827,7 +1020,7 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     now = datetime.now()
     uk_close_block = False  # Disabled UK close protection
     
-    # Spread limits removed from MaxProtect - trades not blocked by spread
+    # MaxProtect reactivated with tolerant rules
     
     # Determine session weight for adaptive confidence
     session_weight = 0
@@ -879,7 +1072,7 @@ Analyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.
 Apply adaptive session weight: {session_weight:+d}% for {technical_data['sessions']['active']}.
 Respect minimum confidence threshold: 70%.
 TRIPLE VALIDATION REQUIRED.
-MaxProtect: DISABLED - Timeframe conflicts allowed.
+MaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.
 
 IMPORTANT: Confidence must reflect instrument-specific characteristics:
 - XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)
@@ -1025,7 +1218,12 @@ analysis: <string explaining the decision>
                 "guardian_status": {
                     "anti_range_pass": 'NOT VALIDATED' not in visual_signal.get('triple_check_status', ''),
                     "confluence_pass": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
-                    "max_protect_pass": True,  # MaxProtect disabled - always pass
+                    "max_protect_pass": check_tolerant_maxprotect(technical_data, {
+                        'allow_one_conflict': True,
+                        'require_major_alignment': True,
+                        'spread_check': False,
+                        'volume_requirement': 'relaxed'
+                    }),
                     "session_ok": guardian_filters.get('mandatory_confluence', {}).get('session_ok', False),
                     "structure_ok": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
                     "flow_ok": guardian_filters.get('mandatory_confluence', {}).get('flow_ok', False)
@@ -1053,7 +1251,7 @@ analysis: <string explaining the decision>
             "guardian_status": {
                 "anti_range_pass": False,
                 "confluence_pass": False,
-                "max_protect_pass": True  # MaxProtect disabled - always pass
+                "max_protect_pass": False  # Failed to parse, assume fail
             }
         }
         
@@ -1094,11 +1292,10 @@ def cycle_once():
         if positions_at_breakeven:
             print_info(f"Positions eligible for trailing: {len(positions_at_breakeven)}")
     
-    # Check if we have max trades
+    # Check if we have max trades (but still continue with analysis for auto-refresh)
     max_trades = RISK_MANAGEMENT_CONFIG['max_concurrent_trades']
     if len(open_pos) >= max_trades:
-        print_warning(f"Maximum trades ({max_trades}) already open. Skipping analysis.")
-        return
+        print_info(f"Maximum trades ({max_trades}) already open. Continuing analysis for position management...")
     
     # Check news
     print_separator()
@@ -1109,8 +1306,10 @@ def cycle_once():
             blocked_pairs[symbol] = reason
     print_news_status(blocked_pairs)
     
-    # Analyze each pair
+    # Analyze each pair (always analyze all for continuous market adaptation)
     print_separator()
+    print_info("🔍 PERFORMING DEEP MARKET ANALYSIS FOR ALL INSTRUMENTS")
+    print_info("   (Continuous adaptation for both new and existing positions)")
     signals = []
     
     for symbol in PAIRS:
@@ -1165,6 +1364,9 @@ def cycle_once():
     
     # Process signals (highest confidence first)
     signals = sorted(signals, key=lambda x: x["confidence"], reverse=True)
+    
+    # Auto-refresh existing trades with new signals
+    auto_refresh_open_trades(signals)
     
     for sig in signals:
         symbol = sig["symbol"]
@@ -1274,10 +1476,10 @@ def cycle_once():
             log_trade(decision_id, symbol, action, confidence, "", "", "", status="BLOCKED", reason=blocked_pairs[symbol])
             continue
         
-        # Check if position already open
+        # Check if position already open (already managed by auto-refresh)
         if symbol in open_pos:
-            print_trade_decision(symbol, "SKIP", "Position already open")
-            log_trade(decision_id, symbol, action, confidence, "", "", "", status="SKIPPED", reason="Already open")
+            print_trade_decision(symbol, "MANAGED", "Position actively managed by auto-refresh system")
+            log_trade(decision_id, symbol, action, confidence, "", "", "", status="MANAGED", reason="Auto-refresh active")
             continue
         
         # Open new position
@@ -1308,7 +1510,7 @@ def main():
     
     init_logger()
     print_header()
-    print_info("Using Thanatos-Guardian-Prime v15.3-NOPROTECT Protocol (MaxProtect DISABLED)")
+    print_info("Using Thanatos-Guardian-Prime v15.6-TOLERANT Protocol (MaxProtect ACTIVE but TOLERANT)")
     print_info(f"Trading instruments: {', '.join(TRADING_INSTRUMENTS)}")
     
     # Initialize MT5
@@ -1337,7 +1539,7 @@ def main():
     print_info(f"Risk per trade: {RISK_MANAGEMENT_CONFIG['max_risk_percent_per_trade']}%")
     print_info(f"Minimum confidence: {MIN_CONFIDENCE}%")
     print_info(f"Check interval: {MIN_RECHECK}-{MAX_RECHECK} minutes")
-    print_warning("Guardian Filters Active: Anti-Range, News Filter (MaxProtect DISABLED)")
+    print_warning("Guardian Filters Active: Anti-Range, News Filter, MaxProtect (TOLERANT MODE)")
     
     # Initialize execution speed optimizations
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})

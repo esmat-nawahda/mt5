@@ -66,7 +66,7 @@ def print_header():
     print(f"{Colors.BRIGHT_CYAN}{'='*80}{Colors.RESET}")
     print(f"{Colors.BRIGHT_GREEN}Trading Pairs: {Colors.WHITE}XAUUSD, BTCUSD{Colors.RESET}")
     print(f"{Colors.BRIGHT_GREEN}Risk Management: {Colors.WHITE}Dynamic Position Sizing{Colors.RESET}")
-    print(f"{Colors.BRIGHT_GREEN}Min Confidence: {Colors.WHITE}78%{Colors.RESET}")
+    print(f"{Colors.BRIGHT_GREEN}Min Confidence: {Colors.WHITE}70%{Colors.RESET}")
     print(f"{Colors.BRIGHT_CYAN}{'='*80}{Colors.RESET}\n")
 
 def print_cycle_start(cycle_num):
@@ -90,7 +90,7 @@ def print_ai_analysis(symbol, action, confidence, entry=None, sl=None, tp=None):
     print(f"\n{Colors.BRIGHT_BLUE}[AI ANALYSIS] - {symbol}{Colors.RESET}")
     
     # Confidence with color coding
-    conf_color = Colors.BRIGHT_GREEN if confidence >= 78 else Colors.BRIGHT_YELLOW if confidence >= 50 else Colors.BRIGHT_RED
+    conf_color = Colors.BRIGHT_GREEN if confidence >= 70 else Colors.BRIGHT_YELLOW if confidence >= 50 else Colors.BRIGHT_RED
     print(f"  {Colors.WHITE}Confidence: {conf_color}{confidence:.1f}%{Colors.RESET}")
     
     # Action with color coding
@@ -138,6 +138,8 @@ def print_trade_decision(symbol, decision, reason=""):
         print(f"  {Colors.BG_RED}{Colors.WHITE}{Colors.BOLD} !! BLOCKED BY NEWS !! {Colors.RESET}")
     elif decision == "UPDATE":
         print(f"  {Colors.BG_BLUE}{Colors.WHITE}{Colors.BOLD} ~~ UPDATING SL/TP ~~ {Colors.RESET}")
+    elif decision == "MANAGED":
+        print(f"  {Colors.BG_CYAN}{Colors.WHITE}{Colors.BOLD} 🔄 ACTIVELY MANAGED 🔄 {Colors.RESET}")
     
     if reason:
         print(f"  {Colors.DIM}Reason: {reason}{Colors.RESET}")
