@@ -344,7 +344,7 @@ def modify_position_sl(ticket: int, new_sl: float, tp: float):
             new_sl, 
             tp if tp else 0, 
             status="MODIFIED", 
-            reason="Auto SL: Profit ≥ $50 - SL set to breakeven + buffer"
+            reason="Auto SL: Profit >= $50 - SL set to breakeven + buffer"
         )
         return True
     else:
@@ -600,7 +600,7 @@ def auto_refresh_open_trades(signals: list):
                     "",
                     "",
                     status="AUTO_CLOSED",
-                    reason=f"Direction changed: {current_type} → {new_action}"
+                    reason=f"Direction changed: {current_type} -> {new_action}"
                 )
             else:
                 print_error(f"❌ Failed to close {symbol} position: {result.retcode if result else 'Unknown error'}")
@@ -609,10 +609,13 @@ def auto_refresh_open_trades(signals: list):
         
         # Check if SL/TP should be adjusted
         if new_sl and new_tp:
-            # Apply TP/SL adjustments using instrument-specific rules
-            # BTCUSD: SL ×4.7 (370% increase), TP ×0.15 (85% reduction)
-            # XAUUSD: SL ×1.8 (80% increase), TP ×0.40 (60% reduction)
-            adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, new_entry or position.price_open, new_sl, new_tp)
+            # Get key levels for support/resistance calculation
+            key_levels = matching_signal.get("key_levels", {})
+            
+            # Apply TP/SL adjustments using support/resistance if available
+            # BUY: SL at Support-100pips, TP at Resistance-10pips
+            # SELL: SL at Resistance+100pips, TP at Support+10pips
+            adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, new_entry or position.price_open, new_sl, new_tp, key_levels)
             
             # Log the adjustment for transparency
             original_sl_dist = abs(new_sl - (new_entry or position.price_open))
@@ -622,14 +625,14 @@ def auto_refresh_open_trades(signals: list):
             
             adjustments = get_tp_sl_adjustment(symbol)
             
-            # Display the specific adjustment rules being applied
-            if 'BTC' in symbol:
-                print_info(f"  📊 Applying BTCUSD rules: SL +370% (×4.7), TP -85% (×0.15)")
+            # Display the adjustment method used
+            if key_levels and key_levels.get('support') and key_levels.get('resistance'):
+                print_info(f"  📊 Using Support/Resistance levels for {symbol}")
             else:
-                print_info(f"  📊 Applying XAUUSD rules: SL +80% (×1.8), TP -60% (×0.40)")
+                print_info(f"  📊 Using fallback calculation for {symbol} (S/R not available)")
             
-            print_info(f"     DeepSeek SL: {original_sl_dist:.1f} pts → Adjusted SL: {adjusted_sl_dist:.1f} pts")
-            print_info(f"     DeepSeek TP: {original_tp_dist:.1f} pts → Adjusted TP: {adjusted_tp_dist:.1f} pts")
+            print_info(f"     Original: SL {original_sl_dist:.1f} pts, TP {original_tp_dist:.1f} pts")
+            print_info(f"     Adjusted: SL {adjusted_sl_dist:.1f} pts, TP {adjusted_tp_dist:.1f} pts")
             
             # Check if current SL/TP are significantly different from new ones
             sl_diff = abs(position.sl - adjusted_sl) if position.sl else float('inf')
@@ -737,12 +740,81 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
     # Round to 1 decimal place for practical lot sizes
     return round(final_lot_size, 1)
 
-def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float) -> tuple:
-    """Adjust TP and SL based on configuration"""
+def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None) -> tuple:
+    """Adjust TP and SL based on support/resistance levels
+    
+    BUY: SL = Support - 100 pips, TP = Resistance - 10 pips
+    SELL: SL = Resistance + 100 pips, TP = Support + 10 pips
+    """
+    config = TP_SL_ADJUSTMENT_CONFIG
     adjustments = get_tp_sl_adjustment(symbol)
     
     if not adjustments:
         return sl, tp
+    
+    # Convert pips to price units based on instrument
+    if 'XAU' in symbol:
+        pip_value = 0.01  # 1 pip = 0.01 for Gold
+    elif 'BTC' in symbol:
+        pip_value = 1.0   # 1 pip = 1 point for Bitcoin
+    else:
+        pip_value = 0.0001  # Standard forex pip
+    
+    # Check if we should use support/resistance
+    if config.get('use_support_resistance', False) and support_resistance:
+        sl_buffer = config.get('sl_buffer_pips', 100) * pip_value
+        tp_buffer = config.get('tp_buffer_pips', 10) * pip_value
+        
+        support = support_resistance.get('support')
+        resistance = support_resistance.get('resistance')
+        
+        if support and resistance:
+            # Determine if BUY or SELL based on original SL position
+            is_buy = sl < entry
+            
+            if is_buy:
+                # BUY: SL at support - 100 pips, TP at resistance - 10 pips
+                final_sl = support - sl_buffer
+                final_tp = resistance - tp_buffer
+                print_info(f"  📍 Using Support/Resistance: Support={support:.5f}, Resistance={resistance:.5f}")
+                print_info(f"  📍 BUY Setup: SL at Support-100pips={final_sl:.5f}, TP at Resistance-10pips={final_tp:.5f}")
+            else:
+                # SELL: SL at resistance + 100 pips, TP at support + 10 pips
+                final_sl = resistance + sl_buffer
+                final_tp = support + tp_buffer
+                print_info(f"  📍 Using Support/Resistance: Support={support:.5f}, Resistance={resistance:.5f}")
+                print_info(f"  📍 SELL Setup: SL at Resistance+100pips={final_sl:.5f}, TP at Support+10pips={final_tp:.5f}")
+            
+            # Apply min/max limits
+            min_sl = adjustments.get('min_sl_points', 10)
+            max_sl = adjustments.get('max_sl_points', 100)
+            min_tp = adjustments.get('min_tp_points', 15)
+            
+            sl_distance = abs(entry - final_sl)
+            tp_distance = abs(final_tp - entry)
+            
+            # Ensure minimum distances
+            if sl_distance < min_sl:
+                if is_buy:
+                    final_sl = entry - min_sl
+                else:
+                    final_sl = entry + min_sl
+            elif sl_distance > max_sl:
+                if is_buy:
+                    final_sl = entry - max_sl
+                else:
+                    final_sl = entry + max_sl
+            
+            if tp_distance < min_tp:
+                if is_buy:
+                    final_tp = entry + min_tp
+                else:
+                    final_tp = entry - min_tp
+            
+            return final_sl, final_tp
+    
+    # Fallback to original factor-based calculation if S/R not available
+    print_info("  ⚠️ Support/Resistance not available - using fallback calculation")
     
     # Calculate adjusted values
     sl_distance = abs(entry - sl)
@@ -769,21 +841,9 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float) -> tuple:
         final_sl = entry + adjusted_sl_distance
         final_tp = entry - adjusted_tp_distance
     
-    # Check risk/reward ratio
-    rr_ratio = adjusted_tp_distance / adjusted_sl_distance
-    min_rr = adjustments.get('min_risk_reward_ratio', 1.5)
-    
-    if rr_ratio < min_rr:
-        # Adjust TP to meet minimum RR
-        adjusted_tp_distance = adjusted_sl_distance * min_rr
-        if sl < entry:
-            final_tp = entry + adjusted_tp_distance
-        else:
-            final_tp = entry - adjusted_tp_distance
-    
     return final_sl, final_tp
 
-def open_trade_fast(symbol: str, action: str, sl: float, tp: float):
+def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None):
     """Optimized trade execution with pre-calculated data and 5s timeout"""
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
     execution_timeout = exec_config.get('trade_execution_timeout', 5)
@@ -812,8 +872,8 @@ def open_trade_fast(symbol: str, action: str, sl: float, tp: float):
         # Use pre-calculated lot size
         volume = get_precalc_lot_size(symbol)
         
-        # Adjust TP/SL based on configuration
-        adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp)
+        # Adjust TP/SL based on configuration (use support/resistance if available)
+        adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels)
         
         # Optimized order request
         req = {
@@ -872,13 +932,13 @@ def open_trade_fast(symbol: str, action: str, sl: float, tp: float):
         print_error(f"❌ Fast execution error: {e}")
         return None
 
-def open_trade(symbol: str, action: str, sl: float, tp: float):
+def open_trade(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None):
     """Standard trade execution (fallback or when fast mode disabled)"""
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
     
     # Use fast execution if enabled
     if exec_config.get('fast_mode', True):
-        return open_trade_fast(symbol, action, sl, tp)
+        return open_trade_fast(symbol, action, sl, tp, key_levels)
     
     # Standard execution path
     ensure_symbol(symbol)
@@ -903,8 +963,8 @@ def open_trade(symbol: str, action: str, sl: float, tp: float):
     capital_change = account.equity - starting_capital
     print_info(f"Dynamic Lot Sizing: Equity ${account.equity:.2f} | Change: ${capital_change:+.2f} | Lot: {volume}")
     
-    # Adjust TP/SL based on configuration
-    adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp)
+    # Adjust TP/SL based on configuration (use support/resistance if available)
+    adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels)
     
     req = {
         "action": mt5.TRADE_ACTION_DEAL,
@@ -1507,7 +1567,8 @@ def cycle_once():
         
         if entry and sl and tp:
             print_trade_decision(symbol, "OPEN", f"High confidence signal ({confidence:.1f}%) - Thanatos approved")
-            res = open_trade(symbol, action, float(sl), float(tp))
+            key_levels = sig.get("key_levels", {})
+            res = open_trade(symbol, action, float(sl), float(tp), key_levels)
             
             if res and res.retcode == mt5.TRADE_RETCODE_DONE:
                 trade_id = str(res.order or res.deal or decision_id)

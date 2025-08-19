@@ -105,19 +105,22 @@ RANGE_DETECTION_CONFIG = {
 # ================================================================
 
 TP_SL_ADJUSTMENT_CONFIG = {
-    'tp_reduction_factor': 0.50,         # Default TP (overridden per instrument)
-    'sl_increase_factor': 3.0,           # Default SL (overridden per instrument)
-    'min_risk_reward_ratio': 0.20,       # Low minimum RR for conservative trading
+    'use_support_resistance': True,      # Use support/resistance levels for SL/TP
+    'sl_buffer_pips': 100,              # SL placed 100 pips beyond support/resistance
+    'tp_buffer_pips': 10,               # TP placed 10 pips before resistance/support
+    'tp_reduction_factor': 0.18,         # Fallback if S/R not available
+    'sl_increase_factor': 3.0,           # Fallback if S/R not available
+    'min_risk_reward_ratio': 0.07,       # Ultra-low minimum RR for extreme scalping
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
-            'tp_reduction_factor': 0.40,  # Gold: TP = 40% of DeepSeek (60% reduction - max possible)
+            'tp_reduction_factor': 0.20,  # Gold: TP = 20% of DeepSeek (80% reduction - extreme)
             'sl_increase_factor': 1.8,    # Gold: SL = 180% of DeepSeek (80% increase)
-            'min_risk_reward_ratio': 0.22, # Gold: Moderate RR for balanced approach
+            'min_risk_reward_ratio': 0.11, # Gold: Ultra-low RR for extreme scalping
             'max_sl_points': 120,         # Gold: moderate max SL
-            'min_tp_points': 8,           # Gold: small min TP
+            'min_tp_points': 5,           # Gold: very small min TP for quick profits
             'min_sl_points': 25           # Gold: moderate min SL
         },
         'BTCUSD': {

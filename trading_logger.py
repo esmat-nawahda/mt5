@@ -8,7 +8,7 @@ PROMPT_LOG_FILE = os.getenv("PROMPT_LOG_FILE", "prompt_log.json")
 
 def init_logger():
     if not os.path.isfile(LOG_FILE):
-        with open(LOG_FILE, mode="w", newline="") as f:
+        with open(LOG_FILE, mode="w", newline="", encoding='utf-8') as f:
             w = csv.writer(f)
             w.writerow([
                 "timestamp","trade_id","pair","action","confidence",
@@ -16,12 +16,17 @@ def init_logger():
             ])
     
     if not os.path.isfile(PROMPT_LOG_FILE):
-        with open(PROMPT_LOG_FILE, mode="w") as f:
+        with open(PROMPT_LOG_FILE, mode="w", encoding='utf-8') as f:
             json.dump([], f)
 
 def log_trade(trade_id, pair, action, confidence, entry_price, sl, tp,
               status="OPEN", reason="", pnl="", win_loss=""):
-    with open(LOG_FILE, mode="a", newline="") as f:
+    # Clean reason string from Unicode characters that might cause encoding issues
+    if reason:
+        reason = reason.replace('≥', '>=').replace('≤', '<=').replace('→', '->').replace('×', 'x')
+        reason = reason.encode('ascii', 'ignore').decode('ascii')  # Remove any remaining non-ASCII
+    
+    with open(LOG_FILE, mode="a", newline="", encoding='utf-8') as f:
         w = csv.writer(f)
         w.writerow([
             datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
@@ -51,7 +56,7 @@ def log_analysis_prompt(symbol, prompt, checked_rules, ai_response):
         logs = []
         if os.path.isfile(PROMPT_LOG_FILE):
             try:
-                with open(PROMPT_LOG_FILE, "r") as f:
+                with open(PROMPT_LOG_FILE, "r", encoding='utf-8') as f:
                     content = f.read()
                     if content.strip():  # Only parse if file is not empty
                         logs = json.loads(content)
@@ -90,8 +95,8 @@ def log_analysis_prompt(symbol, prompt, checked_rules, ai_response):
             logs = logs[-100:]
         
         # Write back to file
-        with open(PROMPT_LOG_FILE, "w") as f:
-            json.dump(logs, f, indent=2, default=str)  # Added default=str as fallback
+        with open(PROMPT_LOG_FILE, "w", encoding='utf-8') as f:
+            json.dump(logs, f, indent=2, default=str, ensure_ascii=False)  # Added ensure_ascii=False for Unicode
     except Exception as e:
         print(f"Failed to log prompt: {e}")
         import traceback

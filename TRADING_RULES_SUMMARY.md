@@ -7,11 +7,18 @@
 - **ONLY TRADE:** XAUUSD (Gold) and BTCUSD (Bitcoin)
 - **NO OTHER PAIRS ALLOWED**
 
-## ⚠️ CRITICAL RULE: TP/SL REPLACEMENT
-**EVERY DeepSeek suggestion is AUTOMATICALLY modified:**
-- **BTCUSD:** SL multiplied by 4.7, TP multiplied by 0.15
-- **XAUUSD:** SL multiplied by 1.8, TP multiplied by 0.40
-- **This applies to ALL operations: new trades, updates, auto-refresh**
+## ⚠️ CRITICAL RULE: SUPPORT/RESISTANCE BASED TP/SL
+**EVERY trade uses Support/Resistance levels for SL/TP:**
+
+**BUY Positions:**
+- **SL:** Last Support - 100 pips
+- **TP:** Last Resistance - 10 pips
+
+**SELL Positions:**
+- **SL:** Last Resistance + 100 pips
+- **TP:** Last Support + 10 pips
+
+**Fallback:** If S/R not available, uses factor-based calculation
 
 ---
 
@@ -74,11 +81,17 @@
 - ⚠️ **REMOVED:** No min/max lot restrictions
 - ✅ **Broker Limits Only:** Only broker's natural limits apply
 
-### 3. **TP/SL ADJUSTMENTS - EXTREME SCALPING MODE ⚠️⚠️⚠️**
-| Instrument | TP Factor | SL Factor | Min RR | Min TP | Min SL | Max SL |
-|------------|-----------|-----------|--------|--------|--------|--------|
-| XAUUSD     | 0.40× (60% reduction) | 1.8× (80% increase) | 0.22 | 8 pts | 25 pts | 120 pts |
-| BTCUSD     | 0.15× (85% reduction) | 4.7× (370% increase) | 0.03 | 15 pts | 250 pts | 1200 pts|
+### 3. **TP/SL ADJUSTMENTS - SUPPORT/RESISTANCE MODE 🎯**
+| Position | Stop Loss | Take Profit | Buffer |
+|----------|-----------|-------------|--------|
+| BUY      | Support - 100 pips | Resistance - 10 pips | Protected below support |
+| SELL     | Resistance + 100 pips | Support + 10 pips | Protected above resistance |
+
+**Fallback Values (if S/R unavailable):**
+| Instrument | TP Factor | SL Factor | Min TP | Min SL | Max SL |
+|------------|-----------|-----------|--------|--------|--------|
+| XAUUSD     | 0.20× | 1.8× | 5 pts | 25 pts | 120 pts |
+| BTCUSD     | 0.15× | 4.7× | 15 pts | 250 pts | 1200 pts|
 
 ### 4. **STOP LOSS MANAGEMENT**
 - ✅ **Automatic SL Placement:** If no SL exists, automatically places SL at breakeven when profit ≥ $50
@@ -94,12 +107,12 @@
 
 ### 5. **AUTO-REFRESH SYSTEM** ⚡ NEW
 - ✅ **Direction Change Detection:** Closes trade if DeepSeek signal reverses
-- ✅ **SL/TP Auto-Update:** ALWAYS replaces DeepSeek values with:
-  - **BTCUSD:** SL ×4.7 (+370%), TP ×0.15 (-85%)
-  - **XAUUSD:** SL ×1.8 (+80%), TP ×0.40 (-60%)
+- ✅ **SL/TP Auto-Update:** Uses Support/Resistance levels:
+  - **BUY:** SL at Support-100, TP at Resistance-10
+  - **SELL:** SL at Resistance+100, TP at Support+10
 - ✅ **Applied Everywhere:** New trades, position updates, auto-refresh
-- ✅ **Smart Logging:** Shows DeepSeek values → Adjusted values
-- ⚠️ **Example:** DeepSeek suggests SL:100 TP:50 → BTCUSD gets SL:470 TP:7.5
+- ✅ **Smart Logging:** Shows S/R levels and calculated positions
+- ⚠️ **Example:** Support=2050, Resistance=2070 → BUY gets SL=1950, TP=2060
 
 ### 6. **EMERGENCY STOPS**
 - ❌ **Max Drawdown:** 10% → Stop all trading
@@ -310,7 +323,7 @@
 ---
 
 *Last Updated: 2025-08-19*
-*Protocol: Thanatos-Guardian-Prime v16.0-EXTREME-SCALPING*
+*Protocol: Thanatos-Guardian-Prime v17.0-SUPPORT-RESISTANCE*
 
 ---
 
@@ -336,11 +349,12 @@
    - **Spread:** Still not blocking trades
    - **Result:** More balanced approach between safety and opportunities
 
-4. **TP/SL EXTREME ADJUSTMENT RULES - APPLIED TO ALL DEEPSEEK SUGGESTIONS:**
-   - **XAUUSD:** TP ×0.40 (60% reduction), SL ×1.8 (80% increase)
-   - **BTCUSD:** TP ×0.15 (85% reduction), SL ×4.7 (370% increase)
-   - **Universal Application:** EVERY DeepSeek suggestion is modified by these factors
-   - **Result:** Ultra-tight TPs with ultra-wide SLs for extreme scalping
+4. **TP/SL SUPPORT/RESISTANCE BASED CALCULATION:**
+   - **NEW METHOD:** Uses actual support/resistance levels from market analysis
+   - **BUY:** SL at Support-100 pips, TP at Resistance-10 pips
+   - **SELL:** SL at Resistance+100 pips, TP at Support+10 pips
+   - **Smart System:** Falls back to factor calculation if S/R not available
+   - **Result:** More intelligent positioning based on market structure
 
 5. **Automatic Stop Loss Protection:**
    - **NEW:** Automatically places SL at breakeven when profit reaches $50
