@@ -105,31 +105,44 @@ RANGE_DETECTION_CONFIG = {
 # ================================================================
 
 TP_SL_ADJUSTMENT_CONFIG = {
-    'use_support_resistance': True,      # Use support/resistance levels for SL/TP
-    'sl_buffer_pips': 100,              # SL placed 100 pips beyond support/resistance
-    'tp_buffer_pips': 10,               # TP placed 10 pips before resistance/support
-    'tp_reduction_factor': 0.18,         # Fallback if S/R not available
-    'sl_increase_factor': 3.0,           # Fallback if S/R not available
+    'use_fixed_pips': True,             # Use fixed pip values for SL/TP
+    'use_support_resistance': False,     # Disabled - using fixed pips instead
+    'sl_buffer_pips': 100,              # Not used when fixed pips enabled
+    'tp_buffer_pips': 10,               # Not used when fixed pips enabled
+    'tp_reduction_factor': 0.18,         # Not used when fixed pips enabled
+    'sl_increase_factor': 3.0,           # Not used when fixed pips enabled
     'min_risk_reward_ratio': 0.07,       # Ultra-low minimum RR for extreme scalping
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
-            'tp_reduction_factor': 0.20,  # Gold: TP = 20% of DeepSeek (80% reduction - extreme)
-            'sl_increase_factor': 1.8,    # Gold: SL = 180% of DeepSeek (80% increase)
-            'min_risk_reward_ratio': 0.11, # Gold: Ultra-low RR for extreme scalping
-            'max_sl_points': 120,         # Gold: moderate max SL
-            'min_tp_points': 5,           # Gold: very small min TP for quick profits
-            'min_sl_points': 25           # Gold: moderate min SL
+            # Fixed pip values for Gold
+            'fixed_sl_pips_buy': 90,      # Gold BUY: SL at entry - 90 pips
+            'fixed_tp_pips_buy': 30,      # Gold BUY: TP at entry + 30 pips
+            'fixed_sl_pips_sell': 90,     # Gold SELL: SL at entry + 90 pips
+            'fixed_tp_pips_sell': 30,     # Gold SELL: TP at entry - 30 pips
+            # Old factor-based values (not used when fixed pips enabled)
+            'tp_reduction_factor': 0.20,
+            'sl_increase_factor': 1.8,
+            'min_risk_reward_ratio': 0.33, # Gold: 30/90 = 0.33 RR ratio
+            'max_sl_points': 120,
+            'min_tp_points': 5,
+            'min_sl_points': 25
         },
         'BTCUSD': {
-            'tp_reduction_factor': 0.15,  # Bitcoin: TP = 15% of DeepSeek (85% reduction)
-            'sl_increase_factor': 4.7,    # Bitcoin: SL = 470% of DeepSeek (370% increase) - extreme
-            'min_risk_reward_ratio': 0.03, # Bitcoin: Ultra-low RR for extreme scalping
-            'max_sl_points': 1200,        # Bitcoin: increased max SL for extreme stops
-            'min_tp_points': 15,          # Bitcoin: very small min TP
-            'min_sl_points': 250          # Bitcoin: increased min SL for ultra-safety
+            # Fixed pip values for Bitcoin
+            'fixed_sl_pips_buy': 300,     # BTC BUY: SL at entry - 300 pips
+            'fixed_tp_pips_buy': 189,     # BTC BUY: TP at entry + 189 pips
+            'fixed_sl_pips_sell': 300,    # BTC SELL: SL at entry + 300 pips
+            'fixed_tp_pips_sell': 189,    # BTC SELL: TP at entry - 189 pips
+            # Old factor-based values (not used when fixed pips enabled)
+            'tp_reduction_factor': 0.15,
+            'sl_increase_factor': 4.7,
+            'min_risk_reward_ratio': 0.63, # BTC: 189/300 = 0.63 RR ratio
+            'max_sl_points': 1200,
+            'min_tp_points': 15,
+            'min_sl_points': 250
         }
     },
     

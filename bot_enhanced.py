@@ -542,15 +542,15 @@ def update_precalc_cache(force_update=False):
         print_error(f"Failed to update precalc cache: {e}")
 
 def auto_refresh_open_trades(signals: list):
-    """Auto-refresh open trades based on new DeepSeek analysis"""
+    """Auto-refresh only closes positions when signal direction changes - NO SL/TP updates"""
     positions = mt5.positions_get()
     if not positions:
         print_info("📊 No open positions - Ready for new opportunities")
         return
     
     print_separator()
-    print_info("🔄 ADAPTIVE POSITION MANAGEMENT - ANALYZING MARKET CHANGES")
-    print_info(f"   Active positions: {len(positions)} | Checking for direction changes & SL/TP updates")
+    print_info("🔄 POSITION MONITORING - Checking for direction changes only")
+    print_info(f"   Active positions: {len(positions)} | SL/TP updates DISABLED")
     
     for position in positions:
         symbol = position.symbol
@@ -568,14 +568,11 @@ def auto_refresh_open_trades(signals: list):
             continue
         
         new_action = matching_signal["action"]
-        new_entry = matching_signal.get("entry")
-        new_sl = matching_signal.get("sl")
-        new_tp = matching_signal.get("tp")
         
-        # Check if direction changed (close trade)
+        # ONLY ACTION: Check if direction changed (close trade)
         if current_type != new_action:
-            print_warning(f"🔄 Direction changed for {symbol}: {current_type} → {new_action}")
-            print_info(f"  Closing existing {current_type} position")
+            print_warning(f"⚠️ SIGNAL REVERSAL DETECTED for {symbol}: {current_type} → {new_action}")
+            print_info(f"  Closing existing {current_type} position immediately")
             
             close_request = {
                 "action": mt5.TRADE_ACTION_DEAL,
@@ -584,13 +581,13 @@ def auto_refresh_open_trades(signals: list):
                 "volume": position.volume,
                 "type": mt5.ORDER_TYPE_SELL if position.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY,
                 "magic": MAGIC_NUMBER,
-                "comment": "Auto-close: Direction changed",
+                "comment": "Signal reversal",
                 "type_filling": mt5.ORDER_FILLING_IOC
             }
             
             result = mt5.order_send(close_request)
             if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-                print_success(f"✅ Closed {symbol} position due to direction change")
+                print_success(f"✅ Closed {symbol} position due to signal reversal")
                 log_trade(
                     str(result.deal or position.ticket),
                     symbol,
@@ -600,81 +597,13 @@ def auto_refresh_open_trades(signals: list):
                     "",
                     "",
                     status="AUTO_CLOSED",
-                    reason=f"Direction changed: {current_type} -> {new_action}"
+                    reason=f"Signal reversal: {current_type} -> {new_action}"
                 )
             else:
                 print_error(f"❌ Failed to close {symbol} position: {result.retcode if result else 'Unknown error'}")
-            
-            continue
-        
-        # Check if SL/TP should be adjusted
-        if new_sl and new_tp:
-            # Get key levels for support/resistance calculation
-            key_levels = matching_signal.get("key_levels", {})
-            
-            # Apply TP/SL adjustments using support/resistance if available
-            # BUY: SL at Support-100pips, TP at Resistance-10pips
-            # SELL: SL at Resistance+100pips, TP at Support+10pips
-            adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, new_entry or position.price_open, new_sl, new_tp, key_levels)
-            
-            # Log the adjustment for transparency
-            original_sl_dist = abs(new_sl - (new_entry or position.price_open))
-            original_tp_dist = abs(new_tp - (new_entry or position.price_open))
-            adjusted_sl_dist = abs(adjusted_sl - (new_entry or position.price_open))
-            adjusted_tp_dist = abs(adjusted_tp - (new_entry or position.price_open))
-            
-            adjustments = get_tp_sl_adjustment(symbol)
-            
-            # Display the adjustment method used
-            if key_levels and key_levels.get('support') and key_levels.get('resistance'):
-                print_info(f"  📊 Using Support/Resistance levels for {symbol}")
-            else:
-                print_info(f"  📊 Using fallback calculation for {symbol} (S/R not available)")
-            
-            print_info(f"     Original: SL {original_sl_dist:.1f} pts, TP {original_tp_dist:.1f} pts")
-            print_info(f"     Adjusted: SL {adjusted_sl_dist:.1f} pts, TP {adjusted_tp_dist:.1f} pts")
-            
-            # Check if current SL/TP are significantly different from new ones
-            sl_diff = abs(position.sl - adjusted_sl) if position.sl else float('inf')
-            tp_diff = abs(position.tp - adjusted_tp) if position.tp else float('inf')
-            
-            # Define threshold for "significant" change (in points)
-            # Lower thresholds due to extreme scalping approach
-            sl_threshold = 5 if 'XAU' in symbol else 25   # 5 points for Gold, 25 for Bitcoin
-            tp_threshold = 2 if 'XAU' in symbol else 10   # 2 points for Gold, 10 for Bitcoin
-            
-            if sl_diff >= sl_threshold or tp_diff >= tp_threshold:
-                print_info(f"🔄 Updating SL/TP for {symbol} {current_type} position")
-                print_info(f"  Current SL: {position.sl:.5f} → New SL: {adjusted_sl:.5f} (diff: {sl_diff:.1f})")
-                print_info(f"  Current TP: {position.tp:.5f} → New TP: {adjusted_tp:.5f} (diff: {tp_diff:.1f})")
-                
-                modify_request = {
-                    "action": mt5.TRADE_ACTION_SLTP,
-                    "position": position.ticket,
-                    "sl": adjusted_sl,
-                    "tp": adjusted_tp,
-                    "magic": MAGIC_NUMBER,
-                    "comment": f"Auto-refresh: {symbol} adjusted"
-                }
-                
-                result = mt5.order_send(modify_request)
-                if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-                    print_success(f"✅ Updated SL/TP for {symbol}")
-                    log_trade(
-                        str(position.ticket),
-                        symbol,
-                        "MODIFY",
-                        matching_signal.get("confidence", 0),
-                        "",
-                        adjusted_sl,
-                        adjusted_tp,
-                        status="AUTO_UPDATED",
-                        reason=f"SL/TP refreshed: SL {sl_diff:.1f}, TP {tp_diff:.1f} points diff"
-                    )
-                else:
-                    print_error(f"❌ Failed to update {symbol} SL/TP: {result.retcode if result else 'Unknown error'}")
-            else:
-                print_info(f"  {symbol}: SL/TP changes too small - no adjustment needed")
+        else:
+            # Same direction - NO ACTION on SL/TP
+            print_info(f"  {symbol}: Signal still {current_type} - position maintained (SL/TP unchanged)")
 
 def get_precalc_lot_size(symbol: str) -> float:
     """Get pre-calculated lot size for fast execution"""
@@ -741,10 +670,12 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
     return round(final_lot_size, 1)
 
 def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None) -> tuple:
-    """Adjust TP and SL based on support/resistance levels
+    """Adjust TP and SL based on fixed pip values
     
-    BUY: SL = Support - 100 pips, TP = Resistance - 10 pips
-    SELL: SL = Resistance + 100 pips, TP = Support + 10 pips
+    BTCUSD BUY: SL at entry -300 pips, TP at entry +189 pips
+    BTCUSD SELL: SL at entry +300 pips, TP at entry -189 pips
+    XAUUSD BUY: SL at entry -90 pips, TP at entry +30 pips
+    XAUUSD SELL: SL at entry +90 pips, TP at entry -30 pips
     """
     config = TP_SL_ADJUSTMENT_CONFIG
     adjustments = get_tp_sl_adjustment(symbol)
@@ -760,8 +691,30 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
     else:
         pip_value = 0.0001  # Standard forex pip
     
-    # Check if we should use support/resistance
-    if config.get('use_support_resistance', False) and support_resistance:
+    # Check if we should use fixed pip values (highest priority)
+    if config.get('use_fixed_pips', False):
+        # Determine if BUY or SELL based on original SL position
+        is_buy = sl < entry
+        
+        if is_buy:
+            # BUY position - use buy-specific fixed pips
+            sl_pips = adjustments.get('fixed_sl_pips_buy', 100)
+            tp_pips = adjustments.get('fixed_tp_pips_buy', 50)
+            final_sl = entry - (sl_pips * pip_value)
+            final_tp = entry + (tp_pips * pip_value)
+            print_info(f"  [FIXED PIPS] {symbol} BUY: SL at entry-{sl_pips} pips={final_sl:.5f}, TP at entry+{tp_pips} pips={final_tp:.5f}")
+        else:
+            # SELL position - use sell-specific fixed pips
+            sl_pips = adjustments.get('fixed_sl_pips_sell', 100)
+            tp_pips = adjustments.get('fixed_tp_pips_sell', 50)
+            final_sl = entry + (sl_pips * pip_value)
+            final_tp = entry - (tp_pips * pip_value)
+            print_info(f"  [FIXED PIPS] {symbol} SELL: SL at entry+{sl_pips} pips={final_sl:.5f}, TP at entry-{tp_pips} pips={final_tp:.5f}")
+        
+        return final_sl, final_tp
+    
+    # Check if we should use support/resistance (second priority)
+    elif config.get('use_support_resistance', False) and support_resistance:
         sl_buffer = config.get('sl_buffer_pips', 100) * pip_value
         tp_buffer = config.get('tp_buffer_pips', 10) * pip_value
         
@@ -1165,7 +1118,7 @@ visual_signal:
   action: "BUY" or "SELL" or "NO_TRADE"
   confidence:
     value: <float 0-100>
-    level: "😊" if ≥90 | "😃" if 85-89 | "🙂" if 70-84 | "⛔" if <70
+    level: "😊" if >=90 | "😃" if 85-89 | "🙂" if 70-84 | "⛔" if <70
     breakdown:
       quantum: <float 0-100>
       tactical: <float 0-100>
@@ -1194,7 +1147,7 @@ guardian_filters:
   soft_safety: <list of checks>
 
 max_protect_rule:
-  description: "If ≥2 trends conflict between H1/M15/M5 → FORCE NO_TRADE"
+  description: "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE"
   status: <string>
 
 pair_profile:

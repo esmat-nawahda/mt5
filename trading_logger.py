@@ -23,8 +23,14 @@ def log_trade(trade_id, pair, action, confidence, entry_price, sl, tp,
               status="OPEN", reason="", pnl="", win_loss=""):
     # Clean reason string from Unicode characters that might cause encoding issues
     if reason:
-        reason = reason.replace('≥', '>=').replace('≤', '<=').replace('→', '->').replace('×', 'x')
-        reason = reason.encode('ascii', 'ignore').decode('ascii')  # Remove any remaining non-ASCII
+        # Convert to string and handle encoding safely
+        reason = str(reason)
+        try:
+            # Try to encode as ASCII, replacing any non-ASCII characters
+            reason = reason.encode('ascii', 'replace').decode('ascii')
+        except:
+            # If that fails, just use a simple ASCII version
+            reason = ''.join(char if ord(char) < 128 else '?' for char in reason)
     
     with open(LOG_FILE, mode="a", newline="", encoding='utf-8') as f:
         w = csv.writer(f)

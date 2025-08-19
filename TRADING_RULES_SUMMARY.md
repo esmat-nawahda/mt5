@@ -7,18 +7,18 @@
 - **ONLY TRADE:** XAUUSD (Gold) and BTCUSD (Bitcoin)
 - **NO OTHER PAIRS ALLOWED**
 
-## ⚠️ CRITICAL RULE: SUPPORT/RESISTANCE BASED TP/SL
-**EVERY trade uses Support/Resistance levels for SL/TP:**
+## ⚠️ CRITICAL RULE: FIXED PIP-BASED TP/SL
+**EVERY trade uses FIXED pip values from entry price:**
 
-**BUY Positions:**
-- **SL:** Last Support - 100 pips
-- **TP:** Last Resistance - 10 pips
+**BTCUSD:**
+- **BUY:** SL at entry -300 pips, TP at entry +189 pips
+- **SELL:** SL at entry +300 pips, TP at entry -189 pips
 
-**SELL Positions:**
-- **SL:** Last Resistance + 100 pips
-- **TP:** Last Support + 10 pips
+**XAUUSD:**
+- **BUY:** SL at entry -90 pips, TP at entry +30 pips
+- **SELL:** SL at entry +90 pips, TP at entry -30 pips
 
-**Fallback:** If S/R not available, uses factor-based calculation
+**DeepSeek values are IGNORED - only used to determine BUY/SELL direction**
 
 ---
 
@@ -81,17 +81,13 @@
 - ⚠️ **REMOVED:** No min/max lot restrictions
 - ✅ **Broker Limits Only:** Only broker's natural limits apply
 
-### 3. **TP/SL ADJUSTMENTS - SUPPORT/RESISTANCE MODE 🎯**
-| Position | Stop Loss | Take Profit | Buffer |
-|----------|-----------|-------------|--------|
-| BUY      | Support - 100 pips | Resistance - 10 pips | Protected below support |
-| SELL     | Resistance + 100 pips | Support + 10 pips | Protected above resistance |
-
-**Fallback Values (if S/R unavailable):**
-| Instrument | TP Factor | SL Factor | Min TP | Min SL | Max SL |
-|------------|-----------|-----------|--------|--------|--------|
-| XAUUSD     | 0.20× | 1.8× | 5 pts | 25 pts | 120 pts |
-| BTCUSD     | 0.15× | 4.7× | 15 pts | 250 pts | 1200 pts|
+### 3. **TP/SL ADJUSTMENTS - FIXED PIP MODE 🎯**
+| Instrument | Direction | Stop Loss | Take Profit | Risk/Reward |
+|------------|-----------|-----------|-------------|-------------|
+| BTCUSD     | BUY       | Entry -300 pips | Entry +189 pips | 0.63 (189/300) |
+| BTCUSD     | SELL      | Entry +300 pips | Entry -189 pips | 0.63 (189/300) |
+| XAUUSD     | BUY       | Entry -90 pips  | Entry +30 pips  | 0.33 (30/90) |
+| XAUUSD     | SELL      | Entry +90 pips  | Entry -30 pips  | 0.33 (30/90) |
 
 ### 4. **STOP LOSS MANAGEMENT**
 - ✅ **Automatic SL Placement:** If no SL exists, automatically places SL at breakeven when profit ≥ $50
@@ -105,14 +101,13 @@
 - ✅ **One-Way Movement:** SL only moves in favorable direction
 - ✅ **Protection Level:** Keeps SL 10 pips behind current price
 
-### 5. **AUTO-REFRESH SYSTEM** ⚡ NEW
-- ✅ **Direction Change Detection:** Closes trade if DeepSeek signal reverses
-- ✅ **SL/TP Auto-Update:** Uses Support/Resistance levels:
-  - **BUY:** SL at Support-100, TP at Resistance-10
-  - **SELL:** SL at Resistance+100, TP at Support+10
-- ✅ **Applied Everywhere:** New trades, position updates, auto-refresh
-- ✅ **Smart Logging:** Shows S/R levels and calculated positions
-- ⚠️ **Example:** Support=2050, Resistance=2070 → BUY gets SL=1950, TP=2060
+### 5. **AUTO-REFRESH SYSTEM** ⚡ SIMPLIFIED
+- ✅ **ONLY ACTION:** Closes position if signal reverses (BUY → SELL or SELL → BUY)
+- ❌ **NO SL/TP UPDATES:** Stop loss and take profit remain unchanged
+- ✅ **Signal Monitoring:** Checks every cycle for direction changes
+- ✅ **Immediate Close:** Exits position as soon as signal reverses
+- ⚠️ **Example:** Have BUY position + Signal changes to SELL = Close position
+- ℹ️ **Note:** SL/TP are set once at entry and never modified
 
 ### 6. **EMERGENCY STOPS**
 - ❌ **Max Drawdown:** 10% → Stop all trading
@@ -323,7 +318,7 @@
 ---
 
 *Last Updated: 2025-08-19*
-*Protocol: Thanatos-Guardian-Prime v17.0-SUPPORT-RESISTANCE*
+*Protocol: Thanatos-Guardian-Prime v18.0-FIXED-PIPS*
 
 ---
 
@@ -349,12 +344,12 @@
    - **Spread:** Still not blocking trades
    - **Result:** More balanced approach between safety and opportunities
 
-4. **TP/SL SUPPORT/RESISTANCE BASED CALCULATION:**
-   - **NEW METHOD:** Uses actual support/resistance levels from market analysis
-   - **BUY:** SL at Support-100 pips, TP at Resistance-10 pips
-   - **SELL:** SL at Resistance+100 pips, TP at Support+10 pips
-   - **Smart System:** Falls back to factor calculation if S/R not available
-   - **Result:** More intelligent positioning based on market structure
+4. **TP/SL FIXED PIP VALUES FROM ENTRY:**
+   - **NEW METHOD:** Uses fixed pip distances from entry price
+   - **BTCUSD:** 300 pip SL, 189 pip TP (0.63 RR ratio)
+   - **XAUUSD:** 90 pip SL, 30 pip TP (0.33 RR ratio)
+   - **DeepSeek Ignored:** AI suggestions only used for direction (BUY/SELL)
+   - **Result:** Consistent, predictable risk management for every trade
 
 5. **Automatic Stop Loss Protection:**
    - **NEW:** Automatically places SL at breakeven when profit reaches $50
@@ -367,3 +362,9 @@
    - **Trail Distance:** Fixed 10 pips for all instruments
    - **Precision:** 1-pip step size for smooth trailing
    - **Result:** Locks in profits while allowing upside potential
+
+7. **Auto-Refresh Simplified - Direction Change Only:**
+   - **REMOVED:** Automatic SL/TP updates during position lifetime
+   - **KEPT:** Position closure on signal reversal
+   - **Fixed Values:** SL/TP set at entry and never changed
+   - **Result:** Simpler position management, predictable risk
