@@ -92,6 +92,9 @@ def calculate_technical_indicators(symbol: str):
     df_m15 = pd.DataFrame(rates_m15)
     df_m5 = pd.DataFrame(rates_m5)
     
+    # Debug: Print available columns for M5 data
+    print_info(f"Available M5 columns for {symbol}: {list(df_m5.columns)}")
+    
     current_price = float(df_h1['close'].iloc[-1])
     
     # Calculate ADX(14) on H1
@@ -177,10 +180,30 @@ def calculate_technical_indicators(symbol: str):
     
     m5_setup = detect_setup(df_m5)
     
-    # Volume analysis
-    volume_ma = df_m5['real_volume'].rolling(window=50).mean()
-    current_volume = int(df_m5['real_volume'].iloc[-1]) if len(df_m5) > 0 else 0
-    volume_ok = df_m5['real_volume'].iloc[-1] > volume_ma.iloc[-1] if len(volume_ma) >= 50 else True
+    # Volume analysis - check both real_volume and tick_volume
+    print_info(f"Volume debugging for {symbol}:")
+    if 'real_volume' in df_m5.columns:
+        real_vol_sample = df_m5['real_volume'].tail(3).values
+        print_info(f"  real_volume last 3 values: {real_vol_sample}")
+    if 'tick_volume' in df_m5.columns:
+        tick_vol_sample = df_m5['tick_volume'].tail(3).values
+        print_info(f"  tick_volume last 3 values: {tick_vol_sample}")
+    
+    if 'real_volume' in df_m5.columns and df_m5['real_volume'].iloc[-1] > 0:
+        current_volume = int(df_m5['real_volume'].iloc[-1])
+        volume_ma = df_m5['real_volume'].rolling(window=50).mean()
+        volume_ok = df_m5['real_volume'].iloc[-1] > volume_ma.iloc[-1] if len(volume_ma) >= 50 else True
+        print_info(f"  Using real_volume: {current_volume}")
+    elif 'tick_volume' in df_m5.columns:
+        # Use tick_volume as fallback (number of ticks, not actual volume)
+        current_volume = int(df_m5['tick_volume'].iloc[-1])
+        volume_ma = df_m5['tick_volume'].rolling(window=50).mean()
+        volume_ok = df_m5['tick_volume'].iloc[-1] > volume_ma.iloc[-1] if len(volume_ma) >= 50 else True
+        print_info(f"  Using tick_volume: {current_volume}")
+    else:
+        current_volume = 0
+        volume_ok = True
+        print_info(f"  No volume data available, using 0")
     
     # Get current session
     now = datetime.now()
