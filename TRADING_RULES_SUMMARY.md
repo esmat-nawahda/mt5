@@ -12,21 +12,21 @@
 ## ⚡ CORE ENTRY REQUIREMENTS (ALL MUST PASS)
 
 ### 1. **CONFIDENCE THRESHOLD**
-- ✅ **Minimum:** 78% confidence required
-- ⚠️ **Gold (XAUUSD):** Typically 78-85% (conservative)
+- ✅ **Minimum:** 70% confidence required
+- ⚠️ **Gold (XAUUSD):** Typically 70-85% (conservative)
 - ⚠️ **Bitcoin (BTCUSD):** Can reach 85-95% (momentum-based)
 
-### 2. **TECHNICAL INDICATORS (MANDATORY)**
-- ✅ **ADX > 20** - Confirms trend strength
-- ✅ **ATR% ≥ 0.35%** - Minimum volatility required
-- ✅ **BB Width ≥ 0.6%** - Bollinger Bands expansion required
-- ❌ **Inside Lookback < 15** - No trade if last 15 H1 candles in consolidation
+### 2. **TECHNICAL INDICATORS (MANDATORY) - MORE TOLERANT ✅**
+- ✅ **ADX > 15** - Confirms trend strength (reduced from 20)
+- ✅ **ATR% ≥ 0.25%** - Minimum volatility required (reduced from 0.35%)
+- ✅ **BB Width ≥ 0.4%** - Bollinger Bands expansion required (reduced from 0.6%)
+- ❌ **Inside Lookback < 20** - No trade if last 20 H1 candles in consolidation (increased from 15)
 
 ### 3. **MULTI-TIMEFRAME ALIGNMENT**
 - ✅ **H1 Trend:** Must be clear (Bullish/Bearish, not Sideways)
 - ✅ **M15 Trend:** Should align with H1
 - ✅ **M5 Setup:** Look for Breakout or Pullback patterns
-- ❌ **MaxProtect Rule:** NO TRADE if ≥2 timeframes conflict
+- ⚠️ **MaxProtect Rule:** DISABLED - Timeframe conflicts allowed ✅
 
 ### 4. **VOLUME REQUIREMENTS**
 - ✅ **Volume > MA50** on M5 timeframe
@@ -64,11 +64,11 @@
 - ⚠️ **REMOVED:** No min/max lot restrictions
 - ✅ **Broker Limits Only:** Only broker's natural limits apply
 
-### 3. **TP/SL ADJUSTMENTS**
+### 3. **TP/SL ADJUSTMENTS - ULTRA CONSERVATIVE ⚠️**
 | Instrument | TP Factor | SL Factor | Min RR | Min TP | Min SL | Max SL |
 |------------|-----------|-----------|--------|--------|--------|--------|
-| XAUUSD     | 0.6×      | 1.1×      | 1.8    | 15 pts | 10 pts | 50 pts |
-| BTCUSD     | 0.65×     | 1.15×     | 1.6    | 50 pts | 30 pts | 200 pts|
+| XAUUSD     | 0.2× (80% reduction) | 3.0× (200% increase) | 0.4 | 5 pts | 30 pts | 150 pts |
+| BTCUSD     | 0.2× (80% reduction) | 3.0× (200% increase) | 0.3 | 20 pts | 100 pts | 600 pts|
 
 ### 4. **STOP LOSS MANAGEMENT**
 - ✅ **SL to Breakeven:** Move when profit ≥ $50
@@ -100,9 +100,9 @@
 
 ## 🔍 GUARDIAN FILTERS (ALL MUST PASS)
 
-1. **Anti-Range Pass:** No extended consolidation detected (MORE TOLERANT) ✅
+1. **Anti-Range Pass:** No extended consolidation detected (EXTREMELY TOLERANT) ✅
 2. **Confluence Pass:** Multiple indicators align
-3. **MaxProtect Pass:** No timeframe conflicts
+3. **MaxProtect Pass:** DISABLED - Always passes ✅
 4. **Session OK:** Trading in active session
 5. **Structure OK:** H1/M15/M5 alignment confirmed
 6. **Flow OK:** Volume and OBV agreement
@@ -115,18 +115,18 @@
 
 ### **XAUUSD (GOLD)**
 - **Type:** Precious Metal, Safe Haven
-- **Anti-Range Config:** Range ATR 0.65, Min candles 6, Compression 0.6 ✅
+- **Anti-Range Config:** Range ATR 0.85, Min candles 8, Compression 0.4 ✅ (MORE TOLERANT)
 - **Analysis Focus:**
   - DXY inverse correlation (DXY ↑ = Gold ↓)
   - Psychological levels: 2000, 2050, 2100
   - Asian session accumulation patterns
   - Interest rate sensitivity
 - **Trading Style:** Conservative, require strong confluence
-- **Confidence Range:** 78-85% typical
+- **Confidence Range:** 70-85% typical
 
 ### **BTCUSD (BITCOIN)**
 - **Type:** Cryptocurrency, High Volatility
-- **Anti-Range Config:** Range ATR 0.75, Min candles 5, Compression 0.5 ✅
+- **Anti-Range Config:** Range ATR 0.9, Min candles 6, Compression 0.3 ✅ (EXTREMELY TOLERANT)
 - **Analysis Focus:**
   - Volume critical (low volume = false breakouts)
   - Weekend gaps common
@@ -152,7 +152,7 @@
 
 3. **Validation Phase**
    - All 6 Guardian Filters must pass
-   - Confidence must be ≥ 78%
+   - Confidence must be ≥ 70%
    - Risk/Reward must meet minimums
 
 4. **Execution Phase**
@@ -192,10 +192,10 @@
    - When daily loss > 5%
 
 2. **Market-Based:**
-   - Range/consolidation > 15 H1 candles
-   - Spread exceeds limits
+   - Range/consolidation > 20 H1 candles
+   - Spread exceeds limits (removed from MaxProtect)
    - Volume < MA50
-   - Timeframe conflicts (MaxProtect)
+   - ⚠️ **Timeframe conflicts:** DISABLED - No longer blocks trades
 
 3. **Account-Based:**
    - Already 2 positions open
@@ -207,11 +207,11 @@
 
 ## 📝 KEY NUMBERS TO REMEMBER
 
-- **78%** - Minimum confidence threshold
-- **20** - Minimum ADX value
-- **0.35%** - Minimum ATR percentage
-- **0.6%** - Minimum BB width percentage
-- **15** - Max consolidation candles
+- **70%** - Minimum confidence threshold
+- **15** - Minimum ADX value (reduced for tolerance)
+- **0.25%** - Minimum ATR percentage (reduced for tolerance)
+- **0.4%** - Minimum BB width percentage (reduced for tolerance)
+- **20** - Max consolidation candles (increased for tolerance)
 - **45** - Minutes news blocking window
 - **2** - Maximum concurrent trades
 - **20** - Maximum daily trades
@@ -225,7 +225,7 @@
 
 ## ⚙️ SYSTEM CONFIGURATION
 
-- **Check Interval:** 3-5 minutes (random)
+- **Check Interval:** 1-2 minutes (random) ⚡ FASTER SCANNING
 - **API Timeout:** 60 seconds (with 2 retries)
 - **Trade Execution:** 5 seconds maximum ✅
 - **Magic Number:** 20250819
@@ -262,8 +262,8 @@
 
 | Signal | Confidence | Guardian | News | Positions | ACTION |
 |--------|------------|----------|------|-----------|---------|
-| BUY/SELL | ≥78% | ALL PASS | CLEAR | <2 | ✅ EXECUTE |
-| BUY/SELL | <78% | ANY | ANY | ANY | ❌ SKIP |
+| BUY/SELL | ≥70% | ALL PASS | CLEAR | <2 | ✅ EXECUTE |
+| BUY/SELL | <70% | ANY | ANY | ANY | ❌ SKIP |
 | BUY/SELL | ANY | ANY FAIL | ANY | ANY | ❌ SKIP |
 | BUY/SELL | ANY | ANY | BLOCKED | ANY | ❌ SKIP |
 | BUY/SELL | ANY | ANY | ANY | ≥2 | ❌ SKIP |
@@ -287,7 +287,7 @@
 ---
 
 *Last Updated: 2025-08-19*
-*Protocol: Thanatos-Guardian-Prime v15.3-TOLERANT-UNRESTRICTED*
+*Protocol: Thanatos-Guardian-Prime v15.4-NOPROTECT-UNRESTRICTED*
 
 ---
 

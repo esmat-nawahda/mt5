@@ -3,7 +3,7 @@
 Enhanced MT5 Multi-Pair Autotrader with Colorful Logging
 Using Thanatos-Guardian-Prime v15.2-MAXPROTECT prompt
 - Pairs: XAUUSD, BTCUSD (configurable)
-- Random re-check 3–5 minutes
+- Random re-check 1–2 minutes
 - Prioritize most confident pair from DeepSeek
 - Block trading 60 min before/after high-impact news
 - Enhanced colorful console output with detailed analysis
@@ -39,10 +39,10 @@ if not LLM_URL.endswith('/chat/completions'):
     LLM_URL = LLM_URL.rstrip('/') + '/chat/completions'
 LLM_MODEL = SYSTEM_CONFIG['deepseek_config']['model']
 LLM_KEY = SYSTEM_CONFIG['deepseek_config']['api_key']
-MIN_RECHECK = int(os.getenv("MIN_RECHECK_MINUTES", "3"))
-MAX_RECHECK = int(os.getenv("MAX_RECHECK_MINUTES", "5"))
+MIN_RECHECK = int(os.getenv("MIN_RECHECK_MINUTES", "1"))
+MAX_RECHECK = int(os.getenv("MAX_RECHECK_MINUTES", "2"))
 DEVIATION = SYSTEM_CONFIG['mt5_config']['slippage']
-MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "78"))
+MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "70"))
 
 MT5_LOGIN = SYSTEM_CONFIG['mt5_config']['login']
 MT5_PASSWORD = SYSTEM_CONFIG['mt5_config']['password']
@@ -877,12 +877,12 @@ News Window: {'🔴 BLOCKED' if red_news_window else '✅ CLEAR'}
 === INSTRUCTIONS ===
 Analyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.
 Apply adaptive session weight: {session_weight:+d}% for {technical_data['sessions']['active']}.
-Respect minimum confidence threshold: 78%.
+Respect minimum confidence threshold: 70%.
 TRIPLE VALIDATION REQUIRED.
-MaxProtect: Force NO_TRADE if ≥2 timeframes conflict.
+MaxProtect: DISABLED - Timeframe conflicts allowed.
 
 IMPORTANT: Confidence must reflect instrument-specific characteristics:
-- XAUUSD (Gold): More conservative, requires stronger confluence (typically 78-85% range)
+- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)
 - BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)
 - Each instrument should have DIFFERENT confidence based on their unique market conditions
 - DO NOT give similar confidence to both instruments unless conditions truly warrant it
@@ -894,7 +894,7 @@ visual_signal:
   action: "BUY" or "SELL" or "NO_TRADE"
   confidence:
     value: <float 0-100>
-    level: "😊" if ≥90 | "😃" if 85-89 | "🙂" if 78-84 | "⛔" if <78
+    level: "😊" if ≥90 | "😃" if 85-89 | "🙂" if 70-84 | "⛔" if <70
     breakdown:
       quantum: <float 0-100>
       tactical: <float 0-100>
@@ -951,10 +951,10 @@ analysis: <string explaining the decision>
     
     # Extract all checked rules for logging
     checked_rules = {
-        "ADX_threshold": {"value": technical_data['measures']['adx14_h1'], "required": 20, "passed": technical_data['measures']['adx14_h1'] > 20},
-        "ATR_threshold": {"value": technical_data['measures']['atr_h1_pct'], "required": 0.35, "passed": technical_data['measures']['atr_h1_pct'] >= 0.35},
-        "BB_width_threshold": {"value": technical_data['measures']['bb20_width_pct_h1'], "required": 0.6, "passed": technical_data['measures']['bb20_width_pct_h1'] >= 0.6},
-        "consolidation_check": {"inside_bars": technical_data['measures']['inside_lookback_h1'], "max_allowed": 15, "passed": technical_data['measures']['inside_lookback_h1'] < 15},
+        "ADX_threshold": {"value": technical_data['measures']['adx14_h1'], "required": 15, "passed": technical_data['measures']['adx14_h1'] > 15},
+        "ATR_threshold": {"value": technical_data['measures']['atr_h1_pct'], "required": 0.25, "passed": technical_data['measures']['atr_h1_pct'] >= 0.25},
+        "BB_width_threshold": {"value": technical_data['measures']['bb20_width_pct_h1'], "required": 0.4, "passed": technical_data['measures']['bb20_width_pct_h1'] >= 0.4},
+        "consolidation_check": {"inside_bars": technical_data['measures']['inside_lookback_h1'], "max_allowed": 20, "passed": technical_data['measures']['inside_lookback_h1'] < 20},
         "news_filter": {"blocked": red_news_window, "reason": reason if red_news_window else "Clear"},
         "uk_close_filter": {"blocked": False, "time": f"{now.hour}:{now.minute:02d}", "status": "DISABLED"},
         "active_trades": {"count": len(open_positions_map()), "max_allowed": 2, "passed": len(open_positions_map()) < 2},
@@ -1025,7 +1025,7 @@ analysis: <string explaining the decision>
                 "guardian_status": {
                     "anti_range_pass": 'NOT VALIDATED' not in visual_signal.get('triple_check_status', ''),
                     "confluence_pass": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
-                    "max_protect_pass": 'No conflict' in max_protect.get('status', '') or 'clear' in max_protect.get('status', '').lower(),
+                    "max_protect_pass": True,  # MaxProtect disabled - always pass
                     "session_ok": guardian_filters.get('mandatory_confluence', {}).get('session_ok', False),
                     "structure_ok": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
                     "flow_ok": guardian_filters.get('mandatory_confluence', {}).get('flow_ok', False)
@@ -1053,7 +1053,7 @@ analysis: <string explaining the decision>
             "guardian_status": {
                 "anti_range_pass": False,
                 "confluence_pass": False,
-                "max_protect_pass": False
+                "max_protect_pass": True  # MaxProtect disabled - always pass
             }
         }
         
@@ -1181,7 +1181,7 @@ def cycle_once():
         breakdown = sig.get("confidence_breakdown", {})
         if breakdown:
             # Determine confidence emoji
-            conf_emoji = "😊" if confidence >= 90 else "😃" if confidence >= 85 else "🙂" if confidence >= 78 else "⛔"
+            conf_emoji = "😊" if confidence >= 90 else "😃" if confidence >= 85 else "🙂" if confidence >= 70 else "⛔"
             print(f"  {Colors.WHITE}Confidence: {Colors.CYAN}{confidence}% {conf_emoji}{Colors.RESET}")
             print(f"  {Colors.WHITE}Confidence Breakdown:{Colors.RESET}")
             print(f"    Quantum: {Colors.CYAN}{breakdown.get('quantum', 0)}%{Colors.RESET}")
@@ -1308,7 +1308,7 @@ def main():
     
     init_logger()
     print_header()
-    print_info("Using Thanatos-Guardian-Prime v15.2-MAXPROTECT Protocol")
+    print_info("Using Thanatos-Guardian-Prime v15.3-NOPROTECT Protocol (MaxProtect DISABLED)")
     print_info(f"Trading instruments: {', '.join(TRADING_INSTRUMENTS)}")
     
     # Initialize MT5
@@ -1337,7 +1337,7 @@ def main():
     print_info(f"Risk per trade: {RISK_MANAGEMENT_CONFIG['max_risk_percent_per_trade']}%")
     print_info(f"Minimum confidence: {MIN_CONFIDENCE}%")
     print_info(f"Check interval: {MIN_RECHECK}-{MAX_RECHECK} minutes")
-    print_warning("Guardian Filters Active: Anti-Range, MaxProtect, News Filter")
+    print_warning("Guardian Filters Active: Anti-Range, News Filter (MaxProtect DISABLED)")
     
     # Initialize execution speed optimizations
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})

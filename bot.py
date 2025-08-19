@@ -26,7 +26,7 @@ MIN_RECHECK = int(os.getenv("MIN_RECHECK_MINUTES", "3"))
 MAX_RECHECK = int(os.getenv("MAX_RECHECK_MINUTES", "5"))
 VOLUME = float(os.getenv("VOLUME", "1.00"))
 DEVIATION = int(os.getenv("DEVIATION", "30"))
-MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "78"))
+MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "70"))
 
 MT5_LOGIN = int(os.getenv("MT5_LOGIN", "0"))
 MT5_PASSWORD = os.getenv("MT5_PASSWORD", "")

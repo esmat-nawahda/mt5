@@ -80,22 +80,22 @@ NEWS_FILTERING_CONFIG = {
 # ================================================================
 
 RANGE_DETECTION_CONFIG = {
-    'range_atr_ratio': 0.6,              # Range if amplitude < 60% ATR
-    'range_min_candles': 10,             # Minimum 10 candles to confirm
-    'breakout_threshold': 1.5,           # Breakout threshold
-    'compression_threshold': 0.7,        # Minimum compression score
+    'range_atr_ratio': 0.8,              # Range if amplitude < 80% ATR (very tolerant)
+    'range_min_candles': 20,             # Minimum 20 candles to confirm (stricter confirmation)
+    'breakout_threshold': 1.2,           # Lower breakout threshold (easier to break out)
+    'compression_threshold': 0.4,        # Lower compression score (more tolerant)
     'timeframes': ['M15', 'H1'],         # Timeframes analyzed for range
     'atr_periods': 14,                   # Periods for ATR calculation
     'instruments_specific': {
         'XAUUSD': {
-            'range_atr_ratio': 0.65,     # Range if BB width < 65% ATR (less strict than 50%)
-            'range_min_candles': 6,      # 6 candles sufficient to confirm the range
-            'compression_threshold': 0.6  # 60% compression (more tolerant than 80%)
+            'range_atr_ratio': 0.85,     # Range if BB width < 85% ATR (very tolerant)
+            'range_min_candles': 8,      # 8 candles sufficient to confirm the range
+            'compression_threshold': 0.4  # 40% compression (very tolerant)
         },
         'BTCUSD': {
-            'range_atr_ratio': 0.75,     # Range if BB width < 75% ATR (more tolerant)
-            'range_min_candles': 5,      # 5 candles sufficient to confirm the range
-            'compression_threshold': 0.5  # 50% compression (more tolerant than 60%)
+            'range_atr_ratio': 0.9,      # Range if BB width < 90% ATR (extremely tolerant)
+            'range_min_candles': 6,      # 6 candles sufficient to confirm the range
+            'compression_threshold': 0.3  # 30% compression (extremely tolerant)
         }
     }
 }
@@ -105,28 +105,28 @@ RANGE_DETECTION_CONFIG = {
 # ================================================================
 
 TP_SL_ADJUSTMENT_CONFIG = {
-    'tp_reduction_factor': 0.7,          # TP = 70% of DeepSeek value
-    'sl_increase_factor': 1.2,           # SL = 120% of DeepSeek value
-    'min_risk_reward_ratio': 1.5,        # Minimum accepted RR
+    'tp_reduction_factor': 0.2,          # TP = 20% of DeepSeek value (80% reduction)
+    'sl_increase_factor': 3.0,           # SL = 300% of DeepSeek value (200% increase)
+    'min_risk_reward_ratio': 0.5,        # Lower minimum RR due to conservative TP/SL
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
-            'tp_reduction_factor': 0.6,   # Gold: more conservative TP
-            'sl_increase_factor': 1.1,    # Gold: less increased SL
-            'min_risk_reward_ratio': 1.8, # Gold: higher RR required
-            'max_sl_points': 50,          # Gold: max SL 50 points
-            'min_tp_points': 15,          # Gold: min TP 15 points
-            'min_sl_points': 10           # Gold: min SL 10 points
+            'tp_reduction_factor': 0.2,   # Gold: TP = 20% of DeepSeek (80% reduction)
+            'sl_increase_factor': 3.0,    # Gold: SL = 300% of DeepSeek (200% increase)
+            'min_risk_reward_ratio': 0.4, # Gold: Lower RR due to conservative approach
+            'max_sl_points': 150,         # Gold: increased max SL for wider stops
+            'min_tp_points': 5,           # Gold: reduced min TP due to conservative target
+            'min_sl_points': 30           # Gold: increased min SL for safer stops
         },
         'BTCUSD': {
-            'tp_reduction_factor': 0.65,  # Bitcoin: moderately reduced TP
-            'sl_increase_factor': 1.15,   # Bitcoin: slightly increased SL
-            'min_risk_reward_ratio': 1.6, # Bitcoin: moderate RR
-            'max_sl_points': 200,         # Bitcoin: max SL 200 points
-            'min_tp_points': 50,          # Bitcoin: min TP 50 points
-            'min_sl_points': 30           # Bitcoin: min SL 30 points
+            'tp_reduction_factor': 0.2,   # Bitcoin: TP = 20% of DeepSeek (80% reduction)
+            'sl_increase_factor': 3.0,    # Bitcoin: SL = 300% of DeepSeek (200% increase)
+            'min_risk_reward_ratio': 0.3, # Bitcoin: Lower RR due to conservative approach
+            'max_sl_points': 600,         # Bitcoin: increased max SL for wider stops
+            'min_tp_points': 20,          # Bitcoin: reduced min TP due to conservative target
+            'min_sl_points': 100          # Bitcoin: increased min SL for safer stops
         }
     },
     
@@ -197,7 +197,7 @@ RISK_MANAGEMENT_CONFIG = {
 # ================================================================
 
 SYSTEM_CONFIG = {
-    'cycle_interval_seconds': int(os.getenv('CYCLE_INTERVAL_SECONDS', 300)),  # 5 minutes default
+    'cycle_interval_seconds': int(os.getenv('CYCLE_INTERVAL_SECONDS', 120)),  # 2 minutes default
     'max_api_calls_per_hour': 100,      # DeepSeek API limit
     'timeout_seconds': 30,               # Request timeout
     'log_level': os.getenv('LOG_LEVEL', 'INFO'),
@@ -263,6 +263,7 @@ PROMPT_CONFIG = {
     'timeframes': ['M15', 'H1', 'H4'],
     'confluence_minimum': 4,
     'risk_reward_minimum': 1.5,
+    'min_confidence_threshold': 70,
     
     'specific_instructions': {
         'XAUUSD': [
