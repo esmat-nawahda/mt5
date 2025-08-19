@@ -19,27 +19,47 @@ from dotenv import load_dotenv
 from news_filter import is_blocked_now, next_blocking_event
 from trading_logger import init_logger, log_trade, log_analysis_prompt
 from colorful_logger import *
+from enhanced_config_btc_xau import (
+    TRADING_INSTRUMENTS, INSTRUMENTS_CONFIG, NEWS_FILTERING_CONFIG,
+    RANGE_DETECTION_CONFIG, TP_SL_ADJUSTMENT_CONFIG, RISK_MANAGEMENT_CONFIG,
+    SYSTEM_CONFIG, PROMPT_CONFIG, get_instrument_config,
+    get_tp_sl_adjustment, is_instrument_allowed, validate_config
+)
 
 load_dotenv()
 
 # Suppress default logging for cleaner output
 logging.basicConfig(level=logging.ERROR)
 
-PAIRS = os.getenv("PAIRS", "XAUUSD,BTCUSD").split(",")
-LLM_URL = os.getenv("LLM_URL")
-LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
-LLM_KEY = os.getenv("LLM_API_KEY")
+# Use configuration from enhanced_config_btc_xau.py
+PAIRS = TRADING_INSTRUMENTS
+# Ensure we have the correct endpoint for chat completions
+LLM_URL = SYSTEM_CONFIG['deepseek_config']['base_url']
+if not LLM_URL.endswith('/chat/completions'):
+    LLM_URL = LLM_URL.rstrip('/') + '/chat/completions'
+LLM_MODEL = SYSTEM_CONFIG['deepseek_config']['model']
+LLM_KEY = SYSTEM_CONFIG['deepseek_config']['api_key']
 MIN_RECHECK = int(os.getenv("MIN_RECHECK_MINUTES", "3"))
 MAX_RECHECK = int(os.getenv("MAX_RECHECK_MINUTES", "5"))
-VOLUME = float(os.getenv("VOLUME", "1.00"))
-DEVIATION = int(os.getenv("DEVIATION", "30"))
+DEVIATION = SYSTEM_CONFIG['mt5_config']['slippage']
 MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "78"))
 
-MT5_LOGIN = int(os.getenv("MT5_LOGIN", "0"))
-MT5_PASSWORD = os.getenv("MT5_PASSWORD", "")
-MT5_SERVER = os.getenv("MT5_SERVER", "")
+MT5_LOGIN = SYSTEM_CONFIG['mt5_config']['login']
+MT5_PASSWORD = SYSTEM_CONFIG['mt5_config']['password']
+MT5_SERVER = SYSTEM_CONFIG['mt5_config']['server']
+MAGIC_NUMBER = SYSTEM_CONFIG['mt5_config']['magic_number']
 
 cycle_count = 0
+# Track positions with SL moved to breakeven (eligible for trailing)
+positions_at_breakeven = set()  # Set of position tickets
+
+# Pre-calculated data cache for speed optimization
+precalc_cache = {
+    'account_info': None,
+    'position_sizes': {},
+    'spread_info': {},
+    'last_update': 0
+}
 
 def mt5_init():
     if not mt5.initialize(login=MT5_LOGIN or None, password=MT5_PASSWORD or None, server=MT5_SERVER or None):
@@ -159,6 +179,7 @@ def calculate_technical_indicators(symbol: str):
     
     # Volume analysis
     volume_ma = df_m5['real_volume'].rolling(window=50).mean()
+    current_volume = int(df_m5['real_volume'].iloc[-1]) if len(df_m5) > 0 else 0
     volume_ok = df_m5['real_volume'].iloc[-1] > volume_ma.iloc[-1] if len(volume_ma) >= 50 else True
     
     # Get current session
@@ -188,7 +209,8 @@ def calculate_technical_indicators(symbol: str):
             "bb20_width_pct_h1": round(bb20_width_pct_h1, 2),
             "inside_lookback_h1": inside_lookback_h1,
             "range_high_h1": round(range_high, 5),
-            "range_low_h1": round(range_low, 5)
+            "range_low_h1": round(range_low, 5),
+            "current_volume": current_volume
         },
         "mtf_state": {
             "H1_trend": h1_trend,
@@ -204,9 +226,488 @@ def open_positions_map() -> dict:
     if positions is None: return {}
     return {p.symbol: p for p in positions}
 
+def manage_position_sl_elevation():
+    """Move SL to breakeven when profit reaches configured threshold"""
+    # Check if feature is enabled
+    sl_config = RISK_MANAGEMENT_CONFIG.get('sl_to_breakeven', {})
+    if not sl_config.get('enabled', True):
+        return
+    
+    profit_threshold = sl_config.get('profit_threshold', 50)
+    
+    positions = mt5.positions_get()
+    if not positions:
+        return
+    
+    for position in positions:
+        # Check if position has reached profit threshold
+        if position.profit >= profit_threshold:
+            # Check if SL is still below entry (for buy) or above entry (for sell)
+            entry_price = position.price_open
+            current_sl = position.sl
+            
+            # Get current symbol info for pip/point calculation
+            symbol_info = mt5.symbol_info(position.symbol)
+            if not symbol_info:
+                continue
+            
+            # Calculate buffer based on instrument and configuration
+            buffer_config = sl_config.get('buffer_pips', {})
+            if "XAU" in position.symbol:
+                buffer_pips = buffer_config.get('XAUUSD', 2)
+                buffer = buffer_pips * 0.01  # Convert pips to price for Gold
+            elif "BTC" in position.symbol:
+                buffer_points = buffer_config.get('BTCUSD', 2)
+                buffer = buffer_points * 1.0  # Points for Bitcoin
+            else:
+                buffer = 0.0002  # 2 pips for forex (default)
+            
+            # Determine new SL with buffer
+            if position.type == mt5.POSITION_TYPE_BUY:
+                new_sl = entry_price + buffer
+                # Only move if current SL is below entry (not yet at breakeven)
+                if current_sl < entry_price:
+                    print_info(f"🎯 Moving SL to breakeven for {position.symbol} BUY position")
+                    print_info(f"  Entry: {entry_price:.5f} | New SL: {new_sl:.5f} | Profit: ${position.profit:.2f}")
+                    if modify_position_sl(position.ticket, new_sl, position.tp):
+                        print_success(f"✅ SL successfully moved to breakeven + {buffer_pips if 'XAU' in position.symbol else buffer_points} {'pips' if 'XAU' in position.symbol else 'points'} buffer")
+                        # Mark position as eligible for trailing stop
+                        positions_at_breakeven.add(position.ticket)
+            
+            elif position.type == mt5.POSITION_TYPE_SELL:
+                new_sl = entry_price - buffer
+                # Only move if current SL is above entry (not yet at breakeven)
+                if current_sl > entry_price:
+                    print_info(f"🎯 Moving SL to breakeven for {position.symbol} SELL position")
+                    print_info(f"  Entry: {entry_price:.5f} | New SL: {new_sl:.5f} | Profit: ${position.profit:.2f}")
+                    if modify_position_sl(position.ticket, new_sl, position.tp):
+                        print_success(f"✅ SL successfully moved to breakeven + {buffer_pips if 'XAU' in position.symbol else buffer_points} {'pips' if 'XAU' in position.symbol else 'points'} buffer")
+                        # Mark position as eligible for trailing stop
+                        positions_at_breakeven.add(position.ticket)
+
+def modify_position_sl(ticket: int, new_sl: float, tp: float):
+    """Modify position stop loss"""
+    request = {
+        "action": mt5.TRADE_ACTION_SLTP,
+        "position": ticket,
+        "sl": new_sl,
+        "tp": tp,
+        "magic": MAGIC_NUMBER,
+        "comment": "SL to breakeven"
+    }
+    
+    result = mt5.order_send(request)
+    
+    if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+        print_success(f"SL moved to breakeven for ticket {ticket}")
+        # Log the SL modification
+        log_trade(
+            str(ticket), 
+            "", 
+            "SL_MODIFY", 
+            0, 
+            "", 
+            new_sl, 
+            tp, 
+            status="MODIFIED", 
+            reason="Profit reached $50 - SL to breakeven"
+        )
+        return True
+    else:
+        error_msg = f"Failed to modify SL: {result.retcode if result else 'Unknown error'}"
+        print_error(error_msg)
+        return False
+
+def detect_existing_breakeven_positions():
+    """Detect positions that are already at breakeven (for bot restart scenarios)"""
+    global positions_at_breakeven
+    
+    positions = mt5.positions_get()
+    if not positions:
+        return
+    
+    for position in positions:
+        entry_price = position.price_open
+        current_sl = position.sl
+        
+        # Check if position is likely at breakeven (SL close to entry)
+        if position.type == mt5.POSITION_TYPE_BUY:
+            # For BUY: SL should be at or slightly above entry
+            if current_sl >= entry_price and current_sl <= (entry_price + 0.05):  # 5 pips/points tolerance
+                positions_at_breakeven.add(position.ticket)
+        elif position.type == mt5.POSITION_TYPE_SELL:
+            # For SELL: SL should be at or slightly below entry
+            if current_sl <= entry_price and current_sl >= (entry_price - 0.05):  # 5 pips/points tolerance
+                positions_at_breakeven.add(position.ticket)
+
+def manage_trailing_stops():
+    """Manage trailing stops for positions that have been moved to breakeven"""
+    global positions_at_breakeven
+    
+    # Check if trailing stop feature is enabled
+    trailing_config = RISK_MANAGEMENT_CONFIG.get('trailing_stop', {})
+    if not trailing_config.get('enabled', False):
+        return
+    
+    positions = mt5.positions_get()
+    if not positions:
+        # Clean up tracking set if no positions
+        positions_at_breakeven.clear()
+        return
+    
+    # Auto-detect existing breakeven positions (for bot restarts)
+    detect_existing_breakeven_positions()
+    
+    # Get current position tickets to clean up closed positions
+    current_tickets = {pos.ticket for pos in positions}
+    positions_at_breakeven = positions_at_breakeven.intersection(current_tickets)
+    
+    trail_distances = trailing_config.get('trail_distance_points', {})
+    step_size = trailing_config.get('step_size', 5)
+    
+    for position in positions:
+        # Only trail positions that have been moved to breakeven
+        if position.ticket not in positions_at_breakeven:
+            continue
+        
+        # Get trailing distance for this instrument
+        trail_distance = trail_distances.get(position.symbol, 15)
+        
+        # Get current market price
+        tick = mt5.symbol_info_tick(position.symbol)
+        if not tick:
+            continue
+        
+        current_price = tick.bid if position.type == mt5.POSITION_TYPE_BUY else tick.ask
+        current_sl = position.sl
+        entry_price = position.price_open
+        
+        # Calculate trail distance in price terms
+        if "XAU" in position.symbol:
+            trail_distance_price = trail_distance * 0.01  # Convert pips to price for Gold
+            step_size_price = step_size * 0.01
+        elif "BTC" in position.symbol:
+            trail_distance_price = trail_distance * 1.0  # Points for Bitcoin
+            step_size_price = step_size * 1.0
+        else:
+            trail_distance_price = trail_distance * 0.00001  # Pips for forex
+            step_size_price = step_size * 0.00001
+        
+        new_sl = None
+        
+        if position.type == mt5.POSITION_TYPE_BUY:
+            # For BUY positions, trail SL upward
+            potential_new_sl = current_price - trail_distance_price
+            
+            # Only move SL if:
+            # 1. New SL is higher than current SL
+            # 2. New SL is at least one step above current SL
+            if potential_new_sl > current_sl and (potential_new_sl - current_sl) >= step_size_price:
+                new_sl = potential_new_sl
+        
+        elif position.type == mt5.POSITION_TYPE_SELL:
+            # For SELL positions, trail SL downward
+            potential_new_sl = current_price + trail_distance_price
+            
+            # Only move SL if:
+            # 1. New SL is lower than current SL
+            # 2. New SL is at least one step below current SL
+            if potential_new_sl < current_sl and (current_sl - potential_new_sl) >= step_size_price:
+                new_sl = potential_new_sl
+        
+        # Execute the trailing stop adjustment
+        if new_sl:
+            print_info(f"🔄 Trailing SL for {position.symbol} {('BUY' if position.type == mt5.POSITION_TYPE_BUY else 'SELL')}")
+            print_info(f"  Current Price: {current_price:.5f} | Old SL: {current_sl:.5f} | New SL: {new_sl:.5f}")
+            print_info(f"  Trail Distance: {trail_distance} {'pips' if 'XAU' in position.symbol else 'points'}")
+            
+            if modify_trailing_sl(position.ticket, new_sl, position.tp, position.symbol):
+                print_success(f"✅ Trailing SL updated for {position.symbol}")
+
+def modify_trailing_sl(ticket: int, new_sl: float, tp: float, symbol: str):
+    """Modify position stop loss for trailing"""
+    request = {
+        "action": mt5.TRADE_ACTION_SLTP,
+        "position": ticket,
+        "sl": new_sl,
+        "tp": tp,
+        "magic": MAGIC_NUMBER,
+        "comment": "Trailing stop"
+    }
+    
+    result = mt5.order_send(request)
+    
+    if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+        # Log the trailing SL modification
+        log_trade(
+            str(ticket), 
+            symbol, 
+            "TRAILING_SL", 
+            0, 
+            "", 
+            new_sl, 
+            tp, 
+            status="MODIFIED", 
+            reason="Trailing stop adjustment"
+        )
+        return True
+    else:
+        error_msg = f"Failed to modify trailing SL: {result.retcode if result else 'Unknown error'}"
+        print_error(error_msg)
+        return False
+
+def update_precalc_cache(force_update=False):
+    """Update pre-calculated cache for speed optimization"""
+    global precalc_cache
+    
+    exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
+    if not exec_config.get('pre_calculate_sizes', True) and not force_update:
+        return
+    
+    current_time = time.time()
+    # Update cache every 30 seconds or on force
+    if current_time - precalc_cache['last_update'] < 30 and not force_update:
+        return
+    
+    try:
+        # Get fresh account info
+        account = mt5.account_info()
+        if account:
+            precalc_cache['account_info'] = account
+            
+            # Calculate dynamic lot sizes based on account equity
+            for symbol in TRADING_INSTRUMENTS:
+                lot_size = calculate_lot_size(symbol, account.equity)
+                precalc_cache['position_sizes'][symbol] = lot_size
+                
+                # Cache spread info
+                tick = mt5.symbol_info_tick(symbol)
+                if tick:
+                    spread = tick.ask - tick.bid
+                    precalc_cache['spread_info'][symbol] = {
+                        'spread': spread,
+                        'ask': tick.ask,
+                        'bid': tick.bid,
+                        'timestamp': current_time
+                    }
+        
+        precalc_cache['last_update'] = current_time
+        
+    except Exception as e:
+        print_error(f"Failed to update precalc cache: {e}")
+
+def get_precalc_lot_size(symbol: str) -> float:
+    """Get pre-calculated lot size for fast execution"""
+    # Use cached value if available and recent
+    if symbol in precalc_cache['position_sizes']:
+        return precalc_cache['position_sizes'][symbol]
+    
+    # Fallback to real-time calculation
+    account = precalc_cache.get('account_info') or mt5.account_info()
+    if account:
+        return calculate_lot_size(symbol, account.equity)
+    
+    return 0.01  # Minimum fallback
+
+def get_precalc_spread_info(symbol: str) -> dict:
+    """Get pre-calculated spread info for fast execution"""
+    spread_info = precalc_cache['spread_info'].get(symbol, {})
+    
+    # Return cached if recent (less than 10 seconds old)
+    if spread_info and (time.time() - spread_info.get('timestamp', 0)) < 10:
+        return spread_info
+    
+    # Get fresh data if cache is stale
+    tick = mt5.symbol_info_tick(symbol)
+    if tick:
+        return {
+            'spread': tick.ask - tick.bid,
+            'ask': tick.ask,
+            'bid': tick.bid,
+            'timestamp': time.time()
+        }
+    
+    return {}
+
+def calculate_lot_size(symbol: str, account_equity: float) -> float:
+    """Calculate dynamic lot size based on capital: min 1 lot, +/-0.5 per $5000 capital change"""
+    
+    # Get dynamic lot sizing configuration
+    lot_config = RISK_MANAGEMENT_CONFIG['dynamic_lot_sizing']
+    
+    if not lot_config.get('enabled', True):
+        return lot_config.get('base_lot_size', 1.0)
+    
+    # Get configuration parameters
+    base_lot_size = lot_config.get('base_lot_size', 1.0)
+    starting_capital = lot_config.get('starting_capital', 10000.0)
+    capital_increment = lot_config.get('capital_increment', 5000.0)
+    lot_increment = lot_config.get('lot_increment', 0.5)
+    min_lot_size = lot_config.get('min_lot_size', 1.0)
+    
+    # Calculate capital change from starting point
+    capital_change = account_equity - starting_capital
+    
+    # Calculate additional lots based on configured increments
+    additional_lots = (capital_change / capital_increment) * lot_increment
+    
+    # Calculate final lot size
+    final_lot_size = base_lot_size + additional_lots
+    
+    # Ensure minimum lot size
+    final_lot_size = max(min_lot_size, final_lot_size)
+    
+    # Round to 1 decimal place for practical lot sizes
+    return round(final_lot_size, 1)
+
+def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float) -> tuple:
+    """Adjust TP and SL based on configuration"""
+    adjustments = get_tp_sl_adjustment(symbol)
+    
+    if not adjustments:
+        return sl, tp
+    
+    # Calculate adjusted values
+    sl_distance = abs(entry - sl)
+    tp_distance = abs(tp - entry)
+    
+    # Apply adjustment factors
+    adjusted_sl_distance = sl_distance * adjustments.get('sl_increase_factor', 1.2)
+    adjusted_tp_distance = tp_distance * adjustments.get('tp_reduction_factor', 0.7)
+    
+    # Apply min/max limits
+    min_sl = adjustments.get('min_sl_points', 10)
+    max_sl = adjustments.get('max_sl_points', 100)
+    min_tp = adjustments.get('min_tp_points', 15)
+    
+    # Ensure minimum distances
+    adjusted_sl_distance = max(min_sl, min(adjusted_sl_distance, max_sl))
+    adjusted_tp_distance = max(min_tp, adjusted_tp_distance)
+    
+    # Calculate final prices
+    if sl < entry:  # Buy position
+        final_sl = entry - adjusted_sl_distance
+        final_tp = entry + adjusted_tp_distance
+    else:  # Sell position
+        final_sl = entry + adjusted_sl_distance
+        final_tp = entry - adjusted_tp_distance
+    
+    # Check risk/reward ratio
+    rr_ratio = adjusted_tp_distance / adjusted_sl_distance
+    min_rr = adjustments.get('min_risk_reward_ratio', 1.5)
+    
+    if rr_ratio < min_rr:
+        # Adjust TP to meet minimum RR
+        adjusted_tp_distance = adjusted_sl_distance * min_rr
+        if sl < entry:
+            final_tp = entry + adjusted_tp_distance
+        else:
+            final_tp = entry - adjusted_tp_distance
+    
+    return final_sl, final_tp
+
+def open_trade_fast(symbol: str, action: str, sl: float, tp: float):
+    """Optimized trade execution with pre-calculated data and 5s timeout"""
+    exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
+    execution_timeout = exec_config.get('trade_execution_timeout', 5)
+    max_retries = exec_config.get('retry_attempts', 2)
+    
+    start_time = time.time()
+    
+    try:
+        ensure_symbol(symbol)
+        
+        # Use pre-calculated spread info for speed
+        spread_info = get_precalc_spread_info(symbol)
+        if not spread_info:
+            print_error(f"Failed to get market data for {symbol}")
+            return None
+        
+        if action.upper() == "BUY":
+            price = spread_info['ask']
+            otype = mt5.ORDER_TYPE_BUY
+        elif action.upper() == "SELL":
+            price = spread_info['bid']
+            otype = mt5.ORDER_TYPE_SELL
+        else:
+            return None
+        
+        # Use pre-calculated lot size
+        volume = get_precalc_lot_size(symbol)
+        
+        # Adjust TP/SL based on configuration
+        adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp)
+        
+        # Optimized order request
+        req = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": volume,
+            "type": otype,
+            "price": price,
+            "sl": adjusted_sl,
+            "tp": adjusted_tp,
+            "deviation": exec_config.get('slippage_tolerance', 3),
+            "magic": MAGIC_NUMBER,
+            "comment": "Thanatos AI Bot - Fast",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        
+        print_info(f"⚡ Fast execution: {action} {symbol} @ {price:.5f}")
+        print_info(f"  Volume: {volume} lots | SL: {adjusted_sl:.5f} | TP: {adjusted_tp:.5f}")
+        
+        # Execute with timeout and retries
+        for attempt in range(max_retries + 1):
+            if time.time() - start_time > execution_timeout:
+                print_error(f"❌ Trade execution timeout ({execution_timeout}s)")
+                return None
+            
+            print_info(f"Executing trade (attempt {attempt + 1}/{max_retries + 1})...")
+            res = mt5.order_send(req)
+            
+            if res and res.retcode == mt5.TRADE_RETCODE_DONE:
+                execution_time = time.time() - start_time
+                print_success(f"✅ Order executed in {execution_time:.2f}s! Ticket: {res.order}")
+                return res
+            elif res and res.retcode in [mt5.TRADE_RETCODE_REQUOTE, mt5.TRADE_RETCODE_PRICE_OFF]:
+                # Price changed, get fresh quote and retry
+                if attempt < max_retries:
+                    print_warning(f"Price changed, retrying... ({res.retcode})")
+                    tick = mt5.symbol_info_tick(symbol)
+                    if tick:
+                        req["price"] = tick.ask if action.upper() == "BUY" else tick.bid
+                    time.sleep(0.1)  # Brief pause before retry
+                    continue
+            
+            # Other errors
+            if res:
+                print_error(f"❌ Order failed: {res.retcode}")
+            else:
+                print_error("❌ Order failed: Unknown error")
+            
+            if attempt < max_retries:
+                time.sleep(0.2)  # Brief pause before retry
+        
+        return None
+        
+    except Exception as e:
+        print_error(f"❌ Fast execution error: {e}")
+        return None
+
 def open_trade(symbol: str, action: str, sl: float, tp: float):
+    """Standard trade execution (fallback or when fast mode disabled)"""
+    exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
+    
+    # Use fast execution if enabled
+    if exec_config.get('fast_mode', True):
+        return open_trade_fast(symbol, action, sl, tp)
+    
+    # Standard execution path
     ensure_symbol(symbol)
     tick = mt5.symbol_info_tick(symbol)
+    account = mt5.account_info()
+    
     if action.upper() == "BUY":
         price = tick.ask
         otype = mt5.ORDER_TYPE_BUY
@@ -216,22 +717,37 @@ def open_trade(symbol: str, action: str, sl: float, tp: float):
     else:
         return None
     
+    # Calculate lot size based on risk management
+    volume = calculate_lot_size(symbol, account.equity)
+    
+    # Display lot sizing calculation details
+    lot_config = RISK_MANAGEMENT_CONFIG['dynamic_lot_sizing']
+    starting_capital = lot_config.get('starting_capital', 10000.0)
+    capital_change = account.equity - starting_capital
+    print_info(f"Dynamic Lot Sizing: Equity ${account.equity:.2f} | Change: ${capital_change:+.2f} | Lot: {volume}")
+    
+    # Adjust TP/SL based on configuration
+    adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp)
+    
     req = {
         "action": mt5.TRADE_ACTION_DEAL,
         "symbol": symbol,
-        "volume": VOLUME,
+        "volume": volume,
         "type": otype,
         "price": price,
-        "sl": sl,
-        "tp": tp,
+        "sl": adjusted_sl,
+        "tp": adjusted_tp,
         "deviation": DEVIATION,
-        "magic": 991337,
+        "magic": MAGIC_NUMBER,
         "comment": "Thanatos AI Bot",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
     }
     
     print_info(f"Sending order: {action} {symbol} @ {price:.5f}")
+    print_info(f"  Volume: {volume} lots")
+    print_info(f"  Adjusted SL: {adjusted_sl:.5f} (from {sl:.5f})")
+    print_info(f"  Adjusted TP: {adjusted_tp:.5f} (from {tp:.5f})")
     res = mt5.order_send(req)
     
     if res and res.retcode == mt5.TRADE_RETCODE_DONE:
@@ -240,6 +756,41 @@ def open_trade(symbol: str, action: str, sl: float, tp: float):
         print_error(f"Order failed: {res.retcode if res else 'Unknown error'}")
     
     return res
+
+def get_instrument_specific_instructions(symbol: str) -> str:
+    """Get instrument-specific analysis instructions"""
+    instructions = PROMPT_CONFIG.get('specific_instructions', {}).get(symbol, [])
+    instrument_config = get_instrument_config(symbol)
+    tp_sl_config = get_tp_sl_adjustment(symbol)
+    
+    prompt_section = f"=== INSTRUMENT-SPECIFIC PARAMETERS FOR {symbol} ===\n"
+    prompt_section += f"Type: {instrument_config.get('type', 'unknown').upper()}\n"
+    prompt_section += f"Volatility: {instrument_config.get('volatility', 'medium').upper()}\n"
+    prompt_section += f"TP Reduction Factor: {tp_sl_config.get('tp_reduction_factor', 0.7)}\n"
+    prompt_section += f"SL Increase Factor: {tp_sl_config.get('sl_increase_factor', 1.2)}\n"
+    prompt_section += f"Min Risk/Reward: {tp_sl_config.get('min_risk_reward_ratio', 1.5)}\n"
+    
+    if symbol == "XAUUSD":
+        prompt_section += "\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n"
+        prompt_section += "- Gold is a safe-haven asset, reacts strongly to USD strength\n"
+        prompt_section += "- Consider DXY inversely correlated (DXY up = Gold down)\n"
+        prompt_section += "- Key psychological levels: 2000, 2050, 2100\n"
+        prompt_section += "- Higher weight on H1 timeframe due to institutional flows\n"
+        prompt_section += "- Conservative approach: Require stronger confluence\n"
+    elif symbol == "BTCUSD":
+        prompt_section += "\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n"
+        prompt_section += "- Bitcoin is highly volatile cryptocurrency\n"
+        prompt_section += "- 24/7 trading, weekend gaps common\n"
+        prompt_section += "- Key psychological levels: 100000, 95000, 90000\n"
+        prompt_section += "- Volume analysis critical - low volume = false breakouts\n"
+        prompt_section += "- More aggressive on momentum but strict on range detection\n"
+    
+    if instructions:
+        prompt_section += "\nAdditional Considerations:\n"
+        for instruction in instructions:
+            prompt_section += f"  - {instruction}\n"
+    
+    return prompt_section
 
 def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     """Use the Thanatos-Guardian-Prime prompt"""
@@ -253,10 +804,7 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     now = datetime.now()
     uk_close_block = False  # Disabled UK close protection
     
-    # Get spread
-    tick = mt5.symbol_info_tick(symbol)
-    spread = tick.ask - tick.bid if tick else 0
-    spread_ok = spread < 0.0010 if symbol == "EURUSD" else spread < 10 if "XAU" in symbol else True
+    # Spread limits removed from MaxProtect - trades not blocked by spread
     
     # Determine session weight for adaptive confidence
     session_weight = 0
@@ -267,86 +815,106 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     elif technical_data['sessions']['active'] == "Asian":
         session_weight = -2
     
-    # Build the prompt with the new template
-    prompt = f"""You are a trading AI following the Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.
-Analyze this market data and return STRICT YAML response following the new enhanced format.
+    # Get instrument-specific characteristics
+    instrument_config = get_instrument_config(symbol)
+    instrument_type = instrument_config.get('type', 'unknown')
+    volatility_profile = instrument_config.get('volatility', 'medium')
+    
+    # Build the enhanced prompt with new template
+    prompt = f"""=== CURRENT MARKET DATA ===
+SYMBOL: {symbol}
+INSTRUMENT TYPE: {instrument_type.upper()}
+VOLATILITY PROFILE: {volatility_profile.upper()}
+TIME: {technical_data['timestamp_cet']} CET
+SESSION: {technical_data['sessions']['active']} ({session_weight:+d}% confidence boost)
+CURRENT PRICE: {technical_data['price']}
 
-meta:
-  version: "15.2-MAXPROTECT"
-  codename: "Thanatos-Guardian-Prime"
-  input_requirements: "✅ VALID (H1/M15/M5 with 30+ candles, current time provided)"
-  response_rules: "STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED"
-  adaptive_weighting: "Apply adaptive weight to confidence based on session (NY Open +3%, London +2%, Asian -2%)"
-  min_confidence_threshold: "78%"
+=== TECHNICAL INDICATORS ===
+ADX H1: {technical_data['measures']['adx14_h1']}
+ATR H1: {technical_data['measures']['atr_h1_points']} points ({technical_data['measures']['atr_h1_pct']:.2f}%)
+BB Width H1: {technical_data['measures']['bb20_width_pct_h1']:.2f}%
+Range High H1: {technical_data['measures']['range_high_h1']}
+Range Low H1: {technical_data['measures']['range_low_h1']}
+Inside Lookback H1: {technical_data['measures']['inside_lookback_h1']} candles
 
-inputs:
-  symbol: "{symbol}"
-  timestamp_cet: "{technical_data['timestamp_cet']}"
-  price: {technical_data['price']}
-  sessions: {{active: "{technical_data['sessions']['active']}", ny_open_boost: {str(technical_data['sessions']['ny_open_boost']).lower()}, weight: {session_weight}}}
-  measures:
-    adx14_h1: {technical_data['measures']['adx14_h1']}
-    atr_h1_points: {technical_data['measures']['atr_h1_points']}
-    atr_h1_pct: {technical_data['measures']['atr_h1_pct']}
-    bb20_width_pct_h1: {technical_data['measures']['bb20_width_pct_h1']}
-    inside_lookback_h1: {technical_data['measures']['inside_lookback_h1']}
-    range_high_h1: {technical_data['measures']['range_high_h1']}
-    range_low_h1: {technical_data['measures']['range_low_h1']}
-  mtf_state:
-    H1_trend: "{technical_data['mtf_state']['H1_trend']}"
-    M15_trend: "{technical_data['mtf_state']['M15_trend']}"
-    M5_setup: "{technical_data['mtf_state']['M5_setup']}"
-    volume_ok: {str(technical_data['mtf_state']['volume_ok']).lower()}
-    obv_agrees: {str(technical_data['mtf_state']['obv_agrees']).lower()}
-  risk_context:
-    active_trades: {len(open_positions_map())}
-    equity_usd: {account_info.equity}
-    red_news_window: {str(red_news_window).lower()}
-    spread_ok: {str(spread_ok).lower()}
+=== MULTI-TIMEFRAME STRUCTURE ===
+H1 TREND: {technical_data['mtf_state']['H1_trend']}
+M15 TREND: {technical_data['mtf_state']['M15_trend']}
+M5 SETUP: {technical_data['mtf_state']['M5_setup']}
+VOLUME OK: {technical_data['mtf_state']['volume_ok']}
+OBV AGREES: {technical_data['mtf_state']['obv_agrees']}
 
-Based on all filters and anti-range rules, provide a trading decision.
-Return ONLY this YAML structure:
+=== RISK & SAFETY ===
+Active Trades: {len(open_positions_map())}
+Equity: ${account_info.equity:.2f}
+News Window: {'🔴 BLOCKED' if red_news_window else '✅ CLEAR'}
 
-action: "BUY" or "SELL" or "NO_TRADE"
-confidence: <float 0-100>
-confidence_breakdown:
-  quantum: <float 0-100>
-  tactical: <float 0-100>
-  psychological: <float 0-100>
-  session_adjustment: {session_weight}
-entry: <float if BUY/SELL>
-sl: <float if BUY/SELL>
-tp1: <float if BUY/SELL>
-tp2: <float if BUY/SELL>
-tp3: <float if BUY/SELL>
-rr_ratios:
-  tp1_rr: <float>
-  tp2_rr: <float>
-  tp3_rr: <float>
-time_projection: <string like "3h05m">
-analysis: <string explaining decision>
-guardian_status:
-  anti_range_pass: <true/false>
-  confluence_pass: <true/false>
-  max_protect_pass: <true/false>
-  session_ok: <true/false>
-  structure_ok: <true/false>
-  flow_ok: <true/false>
-alerts: <list of key alerts>
-key_levels:
-  support: <float>
-  resistance: <float>
+{get_instrument_specific_instructions(symbol)}
 
-Apply all rules:
-- ADX > 20 required for trend
-- ATR% >= 0.35% required for volatility
-- BB width >= 0.6% required
-- No trade if last 15 H1 candles in consolidation
-- No trade during high-impact news
-- No trade if active_trades >= 2
-- Minimum 78% confidence required (after session adjustment)
-- MaxProtect: Force NO_TRADE if ≥2 timeframes conflict
-- Triple validation required before final output
+=== INSTRUCTIONS ===
+Analyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.
+Apply adaptive session weight: {session_weight:+d}% for {technical_data['sessions']['active']}.
+Respect minimum confidence threshold: 78%.
+TRIPLE VALIDATION REQUIRED.
+MaxProtect: Force NO_TRADE if ≥2 timeframes conflict.
+
+IMPORTANT: Confidence must reflect instrument-specific characteristics:
+- XAUUSD (Gold): More conservative, requires stronger confluence (typically 78-85% range)
+- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)
+- Each instrument should have DIFFERENT confidence based on their unique market conditions
+- DO NOT give similar confidence to both instruments unless conditions truly warrant it
+
+RESPOND ONLY IN STRICT YAML FORMAT:
+
+visual_signal:
+  triple_check_status: "✅ VALIDATED 3×" or "⛔️ NOT VALIDATED"
+  action: "BUY" or "SELL" or "NO_TRADE"
+  confidence:
+    value: <float 0-100>
+    level: "😊" if ≥90 | "😃" if 85-89 | "🙂" if 78-84 | "⛔" if <78
+    breakdown:
+      quantum: <float 0-100>
+      tactical: <float 0-100>
+      psychological: <float 0-100>
+    adaptive_note: "Session {technical_data['sessions']['active']} ({session_weight:+d}% confidence)"
+  alerts: <list of alerts>
+
+execution_plan:
+  entry: <float>
+  sl: <float>
+  tp1: <float>
+  tp2: <float>
+  tp3: <float>
+  rr_ratios:
+    tp1_rr: <float>
+    tp2_rr: <float>
+    tp3_rr: <float>
+  time_projection: <string>
+
+guardian_filters:
+  mandatory_confluence:
+    session_ok: <true/false with description>
+    structure_ok: <true/false with description>
+    flow_ok: <true/false with description>
+  hard_safety: <string status>
+  soft_safety: <list of checks>
+
+max_protect_rule:
+  description: "If ≥2 trends conflict between H1/M15/M5 → FORCE NO_TRADE"
+  status: <string>
+
+pair_profile:
+  current_status: <string>
+  kill_zones: <string>
+
+optimization_data:
+  potential_setup: <string>
+  key_levels:
+    support: <float>
+    resistance: <float>
+  volume_trigger: <string>
+
+analysis: <string explaining the decision>
 """
     
     payload = {
@@ -367,7 +935,6 @@ Apply all rules:
         "news_filter": {"blocked": red_news_window, "reason": reason if red_news_window else "Clear"},
         "uk_close_filter": {"blocked": False, "time": f"{now.hour}:{now.minute:02d}", "status": "DISABLED"},
         "active_trades": {"count": len(open_positions_map()), "max_allowed": 2, "passed": len(open_positions_map()) < 2},
-        "spread_check": {"ok": spread_ok, "spread": spread},
         "session": technical_data['sessions']['active'],
         "ny_open_boost": technical_data['sessions']['ny_open_boost'],
         "H1_trend": technical_data['mtf_state']['H1_trend'],
@@ -378,9 +945,25 @@ Apply all rules:
     }
     
     print_info("Requesting Thanatos-Guardian-Prime analysis...")
-    r = requests.post(LLM_URL, headers=headers, json=payload, timeout=30)
-    r.raise_for_status()
-    content = r.json()["choices"][0]["message"]["content"]
+    # Retry logic for timeout errors
+    max_retries = 2
+    for attempt in range(max_retries):
+        try:
+            # Increased timeout to 60 seconds to handle longer processing times
+            r = requests.post(LLM_URL, headers=headers, json=payload, timeout=60)
+            r.raise_for_status()
+            content = r.json()["choices"][0]["message"]["content"]
+            break
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                print_warning(f"API timeout, retrying... (attempt {attempt + 2}/{max_retries})")
+                time.sleep(2)
+            else:
+                print_error("API timeout after all retries")
+                raise
+        except Exception as e:
+            print_error(f"API request failed: {e}")
+            raise
     
     # Strip markdown code blocks if present
     if content.startswith("```"):
@@ -394,10 +977,49 @@ Apply all rules:
     try:
         parsed = yaml.safe_load(content)
         
-        # Log the prompt and analysis
-        log_analysis_prompt(symbol, prompt, checked_rules, parsed)
-        
-        return parsed
+        # Convert new format to expected format
+        if 'visual_signal' in parsed:
+            # Extract data from new format
+            visual_signal = parsed.get('visual_signal', {})
+            execution_plan = parsed.get('execution_plan', {})
+            guardian_filters = parsed.get('guardian_filters', {})
+            max_protect = parsed.get('max_protect_rule', {})
+            optimization = parsed.get('optimization_data', {})
+            
+            # Build response in expected format
+            converted_response = {
+                "action": visual_signal.get('action', 'NO_TRADE'),
+                "confidence": visual_signal.get('confidence', {}).get('value', 0),
+                "confidence_breakdown": visual_signal.get('confidence', {}).get('breakdown', {}),
+                "entry": execution_plan.get('entry'),
+                "sl": execution_plan.get('sl'),
+                "tp1": execution_plan.get('tp1'),
+                "tp2": execution_plan.get('tp2'),
+                "tp3": execution_plan.get('tp3'),
+                "rr_ratios": execution_plan.get('rr_ratios', {}),
+                "time_projection": execution_plan.get('time_projection', ''),
+                "analysis": parsed.get('analysis', ''),
+                "guardian_status": {
+                    "anti_range_pass": 'NOT VALIDATED' not in visual_signal.get('triple_check_status', ''),
+                    "confluence_pass": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
+                    "max_protect_pass": 'No conflict' in max_protect.get('status', '') or 'clear' in max_protect.get('status', '').lower(),
+                    "session_ok": guardian_filters.get('mandatory_confluence', {}).get('session_ok', False),
+                    "structure_ok": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
+                    "flow_ok": guardian_filters.get('mandatory_confluence', {}).get('flow_ok', False)
+                },
+                "alerts": visual_signal.get('alerts', []),
+                "key_levels": optimization.get('key_levels', {})
+            }
+            
+            # Log the prompt and analysis
+            log_analysis_prompt(symbol, prompt, checked_rules, parsed)
+            
+            return converted_response
+        else:
+            # Old format, use as-is
+            log_analysis_prompt(symbol, prompt, checked_rules, parsed)
+            return parsed
+            
     except Exception as e:
         print_error(f"Failed to parse AI response: {e}")
         # Return safe NO_TRADE response
@@ -423,8 +1045,11 @@ def cycle_once():
     
     print_cycle_start(cycle_count)
     
-    # Get account info
-    account = mt5.account_info()
+    # Update pre-calculation cache for speed optimization
+    update_precalc_cache()
+    
+    # Get account info (use cached if available)
+    account = precalc_cache.get('account_info') or mt5.account_info()
     if not account:
         print_error("Failed to get account info")
         return
@@ -433,9 +1058,23 @@ def cycle_once():
     open_pos = open_positions_map()
     print_position_status(open_pos)
     
+    # Manage existing positions - check for SL elevation and trailing stops
+    if open_pos:
+        print_separator()
+        print_info("Checking positions for SL elevation...")
+        manage_position_sl_elevation()
+        
+        print_info("Managing trailing stops...")
+        manage_trailing_stops()
+        
+        # Show trailing status
+        if positions_at_breakeven:
+            print_info(f"Positions eligible for trailing: {len(positions_at_breakeven)}")
+    
     # Check if we have max trades
-    if len(open_pos) >= 2:
-        print_warning("Maximum trades (2) already open. Skipping analysis.")
+    max_trades = RISK_MANAGEMENT_CONFIG['max_concurrent_trades']
+    if len(open_pos) >= max_trades:
+        print_warning(f"Maximum trades ({max_trades}) already open. Skipping analysis.")
         return
     
     # Check news
@@ -465,7 +1104,7 @@ def cycle_once():
             print_market_data(symbol, tech_data['price'], {
                 "high": tech_data['measures']['range_high_h1'],
                 "low": tech_data['measures']['range_low_h1'],
-                "volume": 0  # Simplified
+                "volume": tech_data['measures']['current_volume']
             })
             
             # Display technical indicators
@@ -518,6 +1157,9 @@ def cycle_once():
         # Display confidence breakdown if available
         breakdown = sig.get("confidence_breakdown", {})
         if breakdown:
+            # Determine confidence emoji
+            conf_emoji = "😊" if confidence >= 90 else "😃" if confidence >= 85 else "🙂" if confidence >= 78 else "⛔"
+            print(f"  {Colors.WHITE}Confidence: {Colors.CYAN}{confidence}% {conf_emoji}{Colors.RESET}")
             print(f"  {Colors.WHITE}Confidence Breakdown:{Colors.RESET}")
             print(f"    Quantum: {Colors.CYAN}{breakdown.get('quantum', 0)}%{Colors.RESET}")
             print(f"    Tactical: {Colors.CYAN}{breakdown.get('tactical', 0)}%{Colors.RESET}")
@@ -558,27 +1200,40 @@ def cycle_once():
         # Display guardian status
         guardian = sig.get("guardian", {})
         if guardian:
-            # Check all guardian conditions
-            all_pass = all([
-                guardian.get("anti_range_pass", False),
-                guardian.get("confluence_pass", False),
-                guardian.get("max_protect_pass", False),
-                guardian.get("session_ok", False),
-                guardian.get("structure_ok", False),
-                guardian.get("flow_ok", False)
-            ])
-            status_color = Colors.GREEN if all_pass else Colors.RED
-            
             print(f"  {Colors.WHITE}Guardian Filters:{Colors.RESET}")
-            print(f"    Anti-Range: {status_color}{'PASS' if guardian.get('anti_range_pass') else 'FAIL'}{Colors.RESET}")
-            print(f"    Confluence: {status_color}{'PASS' if guardian.get('confluence_pass') else 'FAIL'}{Colors.RESET}")
-            print(f"    MaxProtect: {status_color}{'PASS' if guardian.get('max_protect_pass') else 'FAIL'}{Colors.RESET}")
+            
+            # Anti-Range check
+            anti_range = guardian.get('anti_range_pass', False)
+            color = Colors.GREEN if anti_range else Colors.RED
+            print(f"    Anti-Range: {color}{'PASS' if anti_range else 'FAIL'}{Colors.RESET}")
+            
+            # Confluence check
+            confluence = guardian.get('confluence_pass', False)
+            color = Colors.GREEN if confluence else Colors.RED
+            print(f"    Confluence: {color}{'PASS' if confluence else 'FAIL'}{Colors.RESET}")
+            
+            # MaxProtect check
+            max_protect = guardian.get('max_protect_pass', False)
+            color = Colors.GREEN if max_protect else Colors.RED
+            print(f"    MaxProtect: {color}{'PASS' if max_protect else 'FAIL'}{Colors.RESET}")
+            
+            # Session check (if present)
             if 'session_ok' in guardian:
-                print(f"    Session: {status_color}{'PASS' if guardian.get('session_ok') else 'FAIL'}{Colors.RESET}")
+                session_ok = guardian.get('session_ok', False)
+                color = Colors.GREEN if session_ok else Colors.RED
+                print(f"    Session: {color}{'PASS' if session_ok else 'FAIL'}{Colors.RESET}")
+            
+            # Structure check (if present)
             if 'structure_ok' in guardian:
-                print(f"    Structure: {status_color}{'PASS' if guardian.get('structure_ok') else 'FAIL'}{Colors.RESET}")
+                structure_ok = guardian.get('structure_ok', False)
+                color = Colors.GREEN if structure_ok else Colors.RED
+                print(f"    Structure: {color}{'PASS' if structure_ok else 'FAIL'}{Colors.RESET}")
+            
+            # Flow check (if present)
             if 'flow_ok' in guardian:
-                print(f"    Flow: {status_color}{'PASS' if guardian.get('flow_ok') else 'FAIL'}{Colors.RESET}")
+                flow_ok = guardian.get('flow_ok', False)
+                color = Colors.GREEN if flow_ok else Colors.RED
+                print(f"    Flow: {color}{'PASS' if flow_ok else 'FAIL'}{Colors.RESET}")
         
         # Decision logic
         decision_id = str(uuid.uuid4())[:8]
@@ -623,9 +1278,15 @@ def cycle_once():
             print_warning(f"Invalid entry/SL/TP values for {symbol}")
 
 def main():
+    # Validate configuration first
+    if not validate_config():
+        print_error("Configuration validation failed. Please check enhanced_config_btc_xau.py")
+        return
+    
     init_logger()
     print_header()
     print_info("Using Thanatos-Guardian-Prime v15.2-MAXPROTECT Protocol")
+    print_info(f"Trading instruments: {', '.join(TRADING_INSTRUMENTS)}")
     
     # Initialize MT5
     try:
@@ -650,10 +1311,23 @@ def main():
     
     print_success("Bot initialized with Thanatos-Guardian-Prime!")
     print_info(f"Trading pairs: {', '.join(PAIRS)}")
-    print_info(f"Volume per trade: {VOLUME} lots")
+    print_info(f"Risk per trade: {RISK_MANAGEMENT_CONFIG['max_risk_percent_per_trade']}%")
     print_info(f"Minimum confidence: {MIN_CONFIDENCE}%")
     print_info(f"Check interval: {MIN_RECHECK}-{MAX_RECHECK} minutes")
     print_warning("Guardian Filters Active: Anti-Range, MaxProtect, News Filter")
+    
+    # Initialize execution speed optimizations
+    exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
+    if exec_config.get('enabled', True):
+        print_info("⚡ Speed optimizations enabled:")
+        print_info(f"  - Fast mode: {'ON' if exec_config.get('fast_mode') else 'OFF'}")
+        print_info(f"  - Pre-calculated sizes: {'ON' if exec_config.get('pre_calculate_sizes') else 'OFF'}")
+        print_info(f"  - Execution timeout: {exec_config.get('trade_execution_timeout', 5)}s")
+        print_info(f"  - Slippage tolerance: {exec_config.get('slippage_tolerance', 3)} pips")
+        
+        # Initial cache population
+        print_info("Initializing speed cache...")
+        update_precalc_cache(force_update=True)
     
     # Main trading loop
     while True:

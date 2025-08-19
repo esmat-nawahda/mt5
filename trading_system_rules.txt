@@ -1,0 +1,334 @@
+===============================================================================
+                    DEEPSEEK-MT5 TRADING SYSTEM v3.0
+                        COMPLETE RULES DOCUMENTATION
+===============================================================================
+
+SYSTEM OVERVIEW:
+Advanced automated trading system integrating DeepSeek AI with MetaTrader 5
+for sophisticated market analysis and execution on XAUUSD and BTCUSD instruments.
+
+===============================================================================
+                              CORE TRADING RULES
+===============================================================================
+
+1. ANTI-FLAT RANGE TRADING PROTECTION
+   =====================================
+   Rule: NO TRADING during sideways/flat market conditions
+   
+   Implementation:
+   - Calculate ATR (Average True Range) over 14 periods
+   - If current price range < 60% of ATR = FLAT MARKET
+   - Minimum 10 candles required to confirm flat condition
+   - Breakout threshold: 150% of ATR to resume trading
+   - Timeframes monitored: H1, H4 for confirmation
+   
+   Purpose: Avoid choppy markets that generate false signals
+
+2. US RED NEWS FILTERING (FOREXFACTORY)
+   ====================================
+   Rule: NO TRADING 45 minutes before/after US high-impact news
+   
+   Implementation:
+   - Monitor ForexFactory calendar: https://www.forexfactory.com/calendar?day=today
+   - Filter ONLY US news (USD currency events)
+   - High impact events only (red/high importance)
+   - 45-minute window before and after news release
+   - Cache news data for 5 minutes to avoid API overload
+   - Block all trades during danger windows
+   
+   Excluded Countries: EUR, GBP, JPY, CHF, CAD, AUD, NZD news ignored
+   US Keywords: FOMC, NFP, GDP, CPI, PPI, Federal Reserve, Powell, etc.
+
+3. REALISTIC TP/SL ADJUSTMENT
+   ===========================
+   Rule: Reduce DeepSeek's overly optimistic TP/SL suggestions
+   
+   Implementation:
+   - TP Reduction: 70% of DeepSeek suggested target
+   - SL Adjustment: 120% of DeepSeek suggested stop loss
+   - Minimum Risk/Reward ratio: 1:1.5
+   - Maximum SL distance: 3% of entry price
+   - TP levels must respect key support/resistance zones
+   
+   Purpose: DeepSeek tends to be overly aggressive with targets
+
+4. PROFIT-BASED STOP LOSS ELEVATION
+   =================================
+   Rule: Move SL to breakeven when profit reaches $50
+   
+   Implementation:
+   - Monitor unrealized P&L in real-time
+   - When profit >= $50: Move SL to entry price + spread
+   - Add 2-pip buffer to avoid premature stops
+   - Only applies to profitable positions
+   - Irreversible action (SL never moves backward)
+
+5. TRAILING STOP ACTIVATION
+   =========================
+   Rule: Activate trailing stop after SL moved to breakeven
+   
+   Implementation:
+   - Activate only after SL moved to breakeven
+   - Trailing distance: 15 pips for XAUUSD, 50 points for BTCUSD
+   - Update every tick when price moves favorably
+   - Minimum trailing step: 5 pips/points
+   - Stop trailing when market moves against position
+
+===============================================================================
+                            POSITION MANAGEMENT RULES
+===============================================================================
+
+6. INTELLIGENT POSITION SIZING
+   ============================
+   Rule: Calculate lot size based on account balance and risk percentage
+   
+   Implementation:
+   - Maximum risk per trade: 2% of account balance
+   - Position size = (Account Balance × Risk%) / (SL Distance × Pip Value)
+   - Minimum lot size: 0.01
+   - Maximum lot size: 100.0 (broker dependent)
+   - Account for spread in risk calculation
+
+7. MAXIMUM CONCURRENT TRADES
+   ==========================
+   Rule: Limit simultaneous open positions
+   
+   Implementation:
+   - Maximum 2 trades open simultaneously per symbol
+   - Maximum 4 trades total across all symbols
+   - No hedging (opposing positions) allowed
+   - Close existing position before opening new one in same direction
+
+8. DAILY TRADING LIMITS
+   =====================
+   Rule: Prevent overtrading and excessive risk
+   
+   Implementation:
+   - Maximum 10 trades per day per symbol
+   - Maximum daily risk: 6% of account balance
+   - Stop trading for the day if daily loss > 3%
+   - Reset counters at midnight GMT
+
+===============================================================================
+                              MARKET TIMING RULES
+===============================================================================
+
+9. TRADING HOURS RESTRICTION
+   ==========================
+   Rule: Trade only during optimal market hours
+   
+   Implementation:
+   - XAUUSD: Sunday 22:00 GMT - Friday 21:00 GMT
+   - BTCUSD: 24/7 (cryptocurrency markets)
+   - Avoid trading 30 minutes before/after major session opens
+   - Reduce position sizes during low liquidity periods
+
+10. SPREAD FILTERING
+    ================
+    Rule: Avoid trading during high spread conditions
+    
+    Implementation:
+    - Maximum allowed spread: 3.0 pips for XAUUSD
+    - Maximum allowed spread: 5.0 points for BTCUSD
+    - Check spread before each trade entry
+    - Cancel pending orders if spread exceeds threshold
+
+===============================================================================
+                             TECHNICAL ANALYSIS RULES
+===============================================================================
+
+11. DEEPSEEK AI INTEGRATION
+    ======================
+    Rule: Use DeepSeek AI for market analysis and trade decisions
+    
+    Implementation:
+    - Send OHLCV data + technical indicators to DeepSeek API
+    - Include current market context and news sentiment
+    - Request structured response with entry/exit levels
+    - Validate AI suggestions against technical filters
+    - Override AI if conflicting with risk management rules
+
+12. TECHNICAL INDICATOR CONFLUENCE
+    ===============================
+    Rule: Require multiple indicator confirmation
+    
+    Implementation:
+    - RSI(14): Oversold < 30, Overbought > 70
+    - ATR(14): For volatility assessment
+    - EMA(20, 50): Trend direction confirmation
+    - Bollinger Bands: Support/resistance levels
+    - Minimum 3 indicators must align for trade signal
+
+13. VOLUME ANALYSIS
+    ===============
+    Rule: Confirm trades with volume analysis (when available)
+    
+    Implementation:
+    - Require above-average volume for breakout trades
+    - Low volume = reduce position size by 50%
+    - Volume spike + price movement = strong signal confirmation
+
+===============================================================================
+                               RISK MANAGEMENT RULES
+===============================================================================
+
+14. MAXIMUM DRAWDOWN PROTECTION
+    ============================
+    Rule: Automatic system shutdown during excessive losses
+    
+    Implementation:
+    - Maximum account drawdown: 15%
+    - Emergency stop: Close all positions if drawdown > 20%
+    - Pause trading for 24 hours after emergency stop
+    - Require manual restart after drawdown events
+
+15. CONNECTION MONITORING
+    =====================
+    Rule: Ensure stable connections to all services
+    
+    Implementation:
+    - Monitor MT5 connection every 30 seconds
+    - Monitor DeepSeek API connection every 5 minutes
+    - Monitor ForexFactory news feed every 10 minutes
+    - Auto-reconnect with exponential backoff
+    - Cancel all pending orders if connection lost > 2 minutes
+
+16. ERROR HANDLING & LOGGING
+    =========================
+    Rule: Comprehensive error tracking and recovery
+    
+    Implementation:
+    - Log all trades, decisions, and system events
+    - Rotate log files daily, keep 30 days history
+    - Email alerts for critical errors
+    - Automatic retry mechanism (max 3 attempts)
+    - Graceful degradation when services unavailable
+
+===============================================================================
+                              PERFORMANCE OPTIMIZATION
+===============================================================================
+
+17. MULTI-BROKER SUPPORT
+    ====================
+    Rule: Enable trading across multiple brokers simultaneously
+    
+    Implementation:
+    - Support 2-10 brokers concurrently
+    - Separate MT5 instances per broker
+    - Unified risk management across all accounts
+    - Load balancing based on execution quality
+    - Broker-specific configuration files
+
+18. EXECUTION SPEED OPTIMIZATION
+    =============================
+    Rule: Minimize latency and slippage
+    
+    Implementation:
+    - VPS hosting near broker servers
+    - Market orders for immediate execution
+    - Pre-calculated position sizes
+    - Asynchronous API calls where possible
+    - Timeout limits: 5 seconds for trade execution
+
+19. ADAPTIVE PARAMETERS
+    ===================
+    Rule: Adjust system parameters based on market conditions
+    
+    Implementation:
+    - Increase SL distance during high volatility
+    - Reduce position sizes during news events
+    - Adjust trailing distance based on ATR
+    - Scale trading frequency with market activity
+
+===============================================================================
+                                MONITORING RULES
+===============================================================================
+
+20. REAL-TIME PERFORMANCE TRACKING
+    ===============================
+    Rule: Continuous monitoring of system performance
+    
+    Implementation:
+    - Track win rate, profit factor, Sharpe ratio
+    - Monitor drawdown periods and recovery times
+    - Calculate daily, weekly, monthly returns
+    - Alert if performance degrades beyond thresholds
+    - Automatic performance reports every 24 hours
+
+21. SYSTEM HEALTH MONITORING
+    =========================
+    Rule: Ensure all system components function properly
+    
+    Implementation:
+    - CPU usage monitoring (alert if > 80%)
+    - Memory usage monitoring (alert if > 4GB)
+    - Disk space monitoring (alert if < 1GB free)
+    - Network latency monitoring (alert if > 100ms)
+    - Service availability checks every 60 seconds
+
+===============================================================================
+                              CONFIGURATION PARAMETERS
+===============================================================================
+
+DEFAULT SETTINGS:
+- News window: 45 minutes
+- Maximum risk per trade: 2%
+- Maximum daily risk: 6%
+- Maximum concurrent trades: 2 per symbol
+- Trailing stop distance: 15 pips (XAUUSD), 50 points (BTCUSD)
+- SL elevation threshold: $50 profit
+- ATR period: 14
+- RSI period: 14
+- EMA periods: 20, 50
+- Range detection threshold: 60% of ATR
+
+CUSTOMIZABLE PARAMETERS:
+- All timeframes and periods
+- Risk percentages and limits
+- News filtering criteria
+- Technical indicator thresholds
+- Broker-specific settings
+
+===============================================================================
+                                EMERGENCY PROCEDURES
+===============================================================================
+
+SYSTEM SHUTDOWN TRIGGERS:
+1. Account drawdown > 20%
+2. Multiple consecutive connection failures
+3. Critical error in core components
+4. Manual emergency stop command
+5. Broker account issues detected
+
+RECOVERY PROCEDURES:
+1. Verify all connections restored
+2. Check account balance and positions
+3. Validate configuration settings
+4. Perform system health check
+5. Resume trading only after manual approval
+
+===============================================================================
+                                VERSION INFORMATION
+===============================================================================
+
+System Version: 3.0.0
+Last Updated: August 2025
+Supported Instruments: XAUUSD, BTCUSD
+Supported Platforms: MetaTrader 5
+AI Provider: DeepSeek API
+News Provider: ForexFactory
+Programming Language: Python 3.8+
+
+===============================================================================
+                                    DISCLAIMER
+===============================================================================
+
+This trading system is provided for educational purposes only.
+Trading involves substantial risk of loss and is not suitable for all investors.
+Past performance does not guarantee future results.
+Use only risk capital that you can afford to lose.
+Always test thoroughly on demo accounts before live trading.
+
+===============================================================================
+                                  END OF DOCUMENT
+===============================================================================

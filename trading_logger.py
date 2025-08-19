@@ -59,13 +59,29 @@ def log_analysis_prompt(symbol, prompt, checked_rules, ai_response):
                 print(f"Warning: Could not read existing prompt log, creating new: {e}")
                 logs = []
         
+        # Extract key decision data from AI response
+        ai_response_serializable = convert_to_serializable(ai_response)
+        decision_summary = {
+            "action": ai_response_serializable.get("action", "NO_TRADE"),
+            "confidence": ai_response_serializable.get("confidence", 0),
+            "confidence_breakdown": ai_response_serializable.get("confidence_breakdown", {}),
+            "entry": ai_response_serializable.get("entry"),
+            "sl": ai_response_serializable.get("sl"),
+            "tp1": ai_response_serializable.get("tp1"),
+            "tp2": ai_response_serializable.get("tp2"),
+            "tp3": ai_response_serializable.get("tp3"),
+            "analysis": ai_response_serializable.get("analysis", ""),
+            "guardian_status": ai_response_serializable.get("guardian_status", {})
+        }
+        
         # Add new log entry with conversion
         log_entry = {
             "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
+            "decision_summary": decision_summary,
             "prompt": prompt,
             "checked_rules": convert_to_serializable(checked_rules),
-            "ai_response": convert_to_serializable(ai_response)
+            "ai_response": ai_response_serializable
         }
         logs.append(log_entry)
         

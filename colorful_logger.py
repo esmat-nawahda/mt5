@@ -65,7 +65,7 @@ def print_header():
     print(f"{Colors.BRIGHT_YELLOW}{Colors.BOLD}       MT5 MULTI-PAIR AI TRADING BOT - POWERED BY DEEPSEEK{Colors.RESET}")
     print(f"{Colors.BRIGHT_CYAN}{'='*80}{Colors.RESET}")
     print(f"{Colors.BRIGHT_GREEN}Trading Pairs: {Colors.WHITE}XAUUSD, BTCUSD{Colors.RESET}")
-    print(f"{Colors.BRIGHT_GREEN}Volume: {Colors.WHITE}1.00 Lots{Colors.RESET}")
+    print(f"{Colors.BRIGHT_GREEN}Risk Management: {Colors.WHITE}Dynamic Position Sizing{Colors.RESET}")
     print(f"{Colors.BRIGHT_GREEN}Min Confidence: {Colors.WHITE}78%{Colors.RESET}")
     print(f"{Colors.BRIGHT_CYAN}{'='*80}{Colors.RESET}\n")
 
