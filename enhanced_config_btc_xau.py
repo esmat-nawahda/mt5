@@ -108,39 +108,45 @@ TP_SL_ADJUSTMENT_CONFIG = {
     'use_normalization': True,          # Use normalization factors for DeepSeek values
     'use_fixed_pips': False,            # Disabled - using normalization instead
     'use_support_resistance': False,    # Disabled - using normalization instead
-    'sl_normalization_factor': 1.25,    # SL = DeepSeek SL × 1.25 for both instruments
+    'sl_normalization_factor': 1.10,    # Default SL factor (fallback)
     'tp_normalization_factor': 0.15,    # TP = DeepSeek TP × 0.15 for both instruments
     'sl_buffer_pips': 100,              # Not used when normalization enabled
     'tp_buffer_pips': 10,               # Not used when normalization enabled
-    'min_risk_reward_ratio': 0.12,      # Conservative RR (0.15/1.25 = 0.12)
+    'min_risk_reward_ratio': 0.14,      # Avg RR ((0.15/1.15 + 0.15/1.05) / 2)
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
-            # Fixed pip values for Gold
+            # Normalization factors for Gold
+            'sl_normalization_factor': 1.05,  # Gold: SL = DeepSeek × 1.05
+            'tp_normalization_factor': 0.15,  # Gold: TP = DeepSeek × 0.15
+            'min_risk_reward_ratio': 0.14,    # Gold: 0.15/1.05 = 0.14 RR ratio
+            # Fixed pip values for Gold (fallback - not used when normalization enabled)
             'fixed_sl_pips_buy': 90,      # Gold BUY: SL at entry - 90 pips
             'fixed_tp_pips_buy': 30,      # Gold BUY: TP at entry + 30 pips
             'fixed_sl_pips_sell': 90,     # Gold SELL: SL at entry + 90 pips
             'fixed_tp_pips_sell': 30,     # Gold SELL: TP at entry - 30 pips
-            # Old factor-based values (not used when fixed pips enabled)
+            # Old factor-based values (not used)
             'tp_reduction_factor': 0.20,
             'sl_increase_factor': 1.8,
-            'min_risk_reward_ratio': 0.33, # Gold: 30/90 = 0.33 RR ratio
             'max_sl_points': 120,
             'min_tp_points': 5,
             'min_sl_points': 25
         },
         'BTCUSD': {
-            # Fixed pip values for Bitcoin
+            # Normalization factors for Bitcoin
+            'sl_normalization_factor': 1.15,  # Bitcoin: SL = DeepSeek × 1.15
+            'tp_normalization_factor': 0.15,  # Bitcoin: TP = DeepSeek × 0.15
+            'min_risk_reward_ratio': 0.13,    # Bitcoin: 0.15/1.15 = 0.13 RR ratio
+            # Fixed pip values for Bitcoin (fallback - not used when normalization enabled)
             'fixed_sl_pips_buy': 300,     # BTC BUY: SL at entry - 300 pips
             'fixed_tp_pips_buy': 189,     # BTC BUY: TP at entry + 189 pips
             'fixed_sl_pips_sell': 300,    # BTC SELL: SL at entry + 300 pips
             'fixed_tp_pips_sell': 189,    # BTC SELL: TP at entry - 189 pips
-            # Old factor-based values (not used when fixed pips enabled)
+            # Old factor-based values (not used)
             'tp_reduction_factor': 0.15,
             'sl_increase_factor': 4.7,
-            'min_risk_reward_ratio': 0.63, # BTC: 189/300 = 0.63 RR ratio
             'max_sl_points': 1200,
             'min_tp_points': 15,
             'min_sl_points': 250

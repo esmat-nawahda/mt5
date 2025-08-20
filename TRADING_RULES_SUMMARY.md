@@ -10,16 +10,21 @@
 ## ⚠️ CRITICAL RULE: NORMALIZATION-BASED TP/SL
 **EVERY trade uses NORMALIZATION factors applied to DeepSeek suggestions:**
 
-**Both BTCUSD and XAUUSD:**
-- **Stop Loss:** DeepSeek SL distance × 1.25
+**BTCUSD (Bitcoin):**
+- **Stop Loss:** DeepSeek SL distance × 1.15
 - **Take Profit:** DeepSeek TP distance × 0.15
-- **Risk/Reward Ratio:** 0.12 (0.15/1.25)
+- **Risk/Reward Ratio:** 0.13 (0.15/1.15)
 
-**Example:**
+**XAUUSD (Gold):**
+- **Stop Loss:** DeepSeek SL distance × 1.05
+- **Take Profit:** DeepSeek TP distance × 0.15
+- **Risk/Reward Ratio:** 0.14 (0.15/1.05)
+
+**Example (Bitcoin):**
 - DeepSeek suggests: SL 100 points away, TP 200 points away
-- Final values: SL = 100 × 1.25 = 125 points, TP = 200 × 0.15 = 30 points
+- Final values: SL = 100 × 1.15 = 115 points, TP = 200 × 0.15 = 30 points
 
-**Purpose:** Balanced approach with moderate stop widening and quick profit-taking
+**Purpose:** Instrument-specific risk management with very tight stops for Gold
 
 ---
 
@@ -90,13 +95,12 @@
 - ✅ **Broker Limits Only:** Only broker's natural limits apply
 
 ### 3. **TP/SL ADJUSTMENTS - NORMALIZATION MODE 🎯**
-| Factor Type | Multiplier | Application | Result |
-|-------------|------------|-------------|--------|
-| Stop Loss   | ×1.25      | DeepSeek SL distance × 1.25 | Moderate stop widening |
-| Take Profit | ×0.15      | DeepSeek TP distance × 0.15 | Quick profit taking |
-| Risk/Reward | 0.12       | 0.15 ÷ 1.25 | Conservative ratio |
+| Instrument | SL Factor | TP Factor | Risk/Reward | Description |
+|------------|-----------|-----------|-------------|-------------|
+| BTCUSD     | ×1.15     | ×0.15     | 0.13        | Moderate stops for Bitcoin |
+| XAUUSD     | ×1.05     | ×0.15     | 0.14        | Tight stops for Gold |
 
-**Applied to both BTCUSD and XAUUSD equally**
+**Different factors per instrument for optimal risk management**
 
 ### 4. **STOP LOSS MANAGEMENT**
 - ✅ **Automatic SL Placement:** If no SL exists, automatically places SL at breakeven when profit ≥ $50
@@ -378,13 +382,13 @@
    - **Fixed Values:** SL/TP set at entry and never changed
    - **Result:** Simpler position management, predictable risk
 
-8. **TP/SL Normalization Factors - UPDATED:**
-   - **IMPLEMENTED:** Normalization factors for DeepSeek suggestions
-   - **Stop Loss:** DeepSeek distance × 1.25 (moderate widening, was 2.5)
-   - **Take Profit:** DeepSeek distance × 0.15 (quick profits, unchanged)
-   - **Applies to:** Both BTCUSD and XAUUSD equally
-   - **Risk/Reward:** Conservative 0.12 ratio (was 0.06)
-   - **Result:** Better balanced risk/reward with tighter stops
+8. **TP/SL Normalization Factors - INSTRUMENT-SPECIFIC (UPDATED):**
+   - **IMPLEMENTED:** Different normalization factors per instrument
+   - **BTCUSD:** SL × 1.15, TP × 0.15 (RR: 0.13)
+   - **XAUUSD:** SL × 1.05, TP × 0.15 (RR: 0.14) - Updated from 1.25
+   - **Take Profit:** Both use 0.15 for quick profits
+   - **Stop Loss:** Bitcoin uses 1.15x, Gold uses very tight 1.05x
+   - **Result:** Gold now has tighter stops for precision trading
 
 9. **Trading Hours Restriction - IMPLEMENTED:**
    - **NEW:** Only trade during specific CET time windows

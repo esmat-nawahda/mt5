@@ -1,999 +1,5 @@
 [
   {
-    "timestamp": "2025-08-20 07:02:58",
-    "symbol": "XAUUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "Conservative BUY signal based on M15 bullish trend and M5 pullback setup. ADX extremely high (495.8) indicates strong directional movement potential. Asian session reduces confidence by 2%. SL at Range Low provides technical safety. Gold-specific conservative approach applied with 72% confidence - requires DXY monitoring and volume confirmation for optimal execution.",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 07:02 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 3323.65\n\n=== TECHNICAL INDICATORS ===\nADX H1: 495.8\nATR H1: 3.84 points (0.12%)\nBB Width H1: 0.88%\nRange High H1: 3325.93\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $11825.15\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.33\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 495.8,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.12,
-        "required": 0.25,
-        "passed": false
-      },
-      "BB_width_threshold": {
-        "value": 0.88,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:02",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "✅ VALIDATED 3×",
-        "action": "BUY",
-        "confidence": {
-          "value": 72.0,
-          "level": "🙂",
-          "breakdown": {
-            "quantum": 75.0,
-            "tactical": 70.0,
-            "psychological": 71.0
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "Volume below optimal threshold",
-          "H1 trend sideways conflicts with lower timeframes",
-          "Require DXY confirmation for stronger conviction"
-        ]
-      },
-      "execution_plan": {
-        "entry": 3323.65,
-        "sl": 3311.51,
-        "tp1": 3328.5,
-        "tp2": 3333.35,
-        "tp3": 3338.2,
-        "rr_ratios": {
-          "tp1_rr": 1.0,
-          "tp2_rr": 1.6,
-          "tp3_rr": 2.2
-        },
-        "time_projection": "2-4 hours for TP1, 6-8 hours for full move"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "false - Asian session reduces confidence",
-          "structure_ok": "true - M15 bullish + M5 pullback aligns",
-          "flow_ok": "true - OBV confirms despite volume concerns"
-        },
-        "hard_safety": "ACTIVE - Equity protection engaged",
-        "soft_safety": [
-          "Risk/Reward meets minimum 0.33 requirement",
-          "No news window conflicts",
-          "SL placed at Range Low H1 (3311.51)"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "ACTIVE but TOLERANT - Only H1 conflicts (sideways vs bullish)"
-      },
-      "pair_profile": {
-        "current_status": "Gold testing mid-range with bullish momentum building",
-        "kill_zones": "Avoid entries above 3328 until breakout confirmation"
-      },
-      "optimization_data": {
-        "potential_setup": "M5 pullback in M15 bullish structure",
-        "key_levels": {
-          "support": 3311.51,
-          "resistance": 3325.93
-        },
-        "volume_trigger": "Await volume spike for confirmation"
-      },
-      "analysis": "Conservative BUY signal based on M15 bullish trend and M5 pullback setup. ADX extremely high (495.8) indicates strong directional movement potential. Asian session reduces confidence by 2%. SL at Range Low provides technical safety. Gold-specific conservative approach applied with 72% confidence - requires DXY monitoring and volume confirmation for optimal execution."
-    }
-  },
-  {
-    "timestamp": "2025-08-20 07:05:10",
-    "symbol": "BTCUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "M15 bullish trend with M5 pullback provides entry opportunity. Current price near range low with ADX showing strong trend strength (247.6). ATR of 458.96 indicates high volatility typical for BTC. Asian session reduces confidence slightly but structure remains valid. Risk/reward meets minimum requirements with 1.2 RR at TP1. Watch for volume confirmation above 113700.",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 07:04 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 113649.75\n\n=== TECHNICAL INDICATORS ===\nADX H1: 247.6\nATR H1: 458.96 points (0.40%)\nBB Width H1: 2.42%\nRange High H1: 113758.75\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: True\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $11633.86\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.63\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 247.6,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.4,
-        "required": 0.25,
-        "passed": true
-      },
-      "BB_width_threshold": {
-        "value": 2.42,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:04",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": true,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "✅ VALIDATED 3×",
-        "action": "BUY",
-        "confidence": {
-          "value": 83.5,
-          "level": "🙂",
-          "breakdown": {
-            "quantum": 85.0,
-            "tactical": 82.0,
-            "psychological": 81.0
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "High volatility - monitor position size",
-          "Watch for weekend gap risk",
-          "Volume confirmation required"
-        ]
-      },
-      "execution_plan": {
-        "entry": 113650.0,
-        "sl": 112500.0,
-        "tp1": 114200.0,
-        "tp2": 114800.0,
-        "tp3": 115500.0,
-        "rr_ratios": {
-          "tp1_rr": 1.2,
-          "tp2_rr": 2.0,
-          "tp3_rr": 3.2
-        },
-        "time_projection": "4-6 hours for TP1, 8-12 hours for full move"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "true - Asian session with reduced confidence but acceptable",
-          "structure_ok": "true - M15 bullish, M5 pullback aligns with H1 sideways",
-          "flow_ok": "true - OBV agrees, volume acceptable"
-        },
-        "hard_safety": "ACTIVE - Position size within limits, news clear",
-        "soft_safety": [
-          "Volatility filter: PASS",
-          "Correlation check: NASDAQ stable",
-          "Range detection: ACTIVE"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "PASS - Only H1/M15 alignment required, M5 pullback acceptable"
-      },
-      "pair_profile": {
-        "current_status": "Momentum building in sideways structure",
-        "kill_zones": "Avoid 114000-114200 resistance zone for entries"
-      },
-      "optimization_data": {
-        "potential_setup": "Pullback in bullish M15 trend within H1 range",
-        "key_levels": {
-          "support": 112526.5,
-          "resistance": 113758.75
-        },
-        "volume_trigger": "Require volume spike above 113700 for confirmation"
-      },
-      "analysis": "M15 bullish trend with M5 pullback provides entry opportunity. Current price near range low with ADX showing strong trend strength (247.6). ATR of 458.96 indicates high volatility typical for BTC. Asian session reduces confidence slightly but structure remains valid. Risk/reward meets minimum requirements with 1.2 RR at TP1. Watch for volume confirmation above 113700."
-    }
-  },
-  {
-    "timestamp": "2025-08-20 07:05:43",
-    "symbol": "XAUUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "Gold shows M15 bullish momentum with M5 pullback providing entry opportunity. Despite H1 sideways trend, the structure allows for long position with tight risk management. Asian session reduces confidence but setup meets minimum thresholds. Conservative gold parameters applied with increased SL factor and reduced TP factor. Trade valid but requires close monitoring due to volume concerns and session limitations.",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 07:05 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 3322.6\n\n=== TECHNICAL INDICATORS ===\nADX H1: 495.8\nATR H1: 3.94 points (0.12%)\nBB Width H1: 0.88%\nRange High H1: 3325.93\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $11633.86\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.33\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 495.8,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.12,
-        "required": 0.25,
-        "passed": false
-      },
-      "BB_width_threshold": {
-        "value": 0.88,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:05",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "✅ VALIDATED 3×",
-        "action": "BUY",
-        "confidence": {
-          "value": 72.0,
-          "level": "🙂",
-          "breakdown": {
-            "quantum": 68.0,
-            "tactical": 75.0,
-            "psychological": 73.0
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "Volume below optimal threshold",
-          "H1 trend sideways conflicts with M15 bullish momentum",
-          "Gold requires stronger confluence - conservative approach applied"
-        ]
-      },
-      "execution_plan": {
-        "entry": 3322.6,
-        "sl": 3311.5,
-        "tp1": 3328.7,
-        "tp2": 3334.8,
-        "tp3": 3340.9,
-        "rr_ratios": {
-          "tp1_rr": 1.1,
-          "tp2_rr": 2.2,
-          "tp3_rr": 3.3
-        },
-        "time_projection": "2-4 hours for TP1, 6-8 hours for full move"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "false - Asian session provides reduced confidence",
-          "structure_ok": "true - M15 bullish with M5 pullback setup aligns",
-          "flow_ok": "true - OBV confirms price action despite volume concerns"
-        },
-        "hard_safety": "ACTIVE - Equity protection engaged",
-        "soft_safety": [
-          "Risk/Reward meets minimum threshold (1.1)",
-          "No conflicting news events",
-          "SL placement respects recent range low"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "TOLERANT - Only 1 conflict (H1 sideways vs M15 bullish) - Trade allowed"
-      },
-      "pair_profile": {
-        "current_status": "Gold testing mid-range with bullish momentum building",
-        "kill_zones": "Below 3311.5 (range low), Above 3325.93 (range high)"
-      },
-      "optimization_data": {
-        "potential_setup": "M5 pullback in M15 bullish structure against H1 range",
-        "key_levels": {
-          "support": 3311.51,
-          "resistance": 3325.93
-        },
-        "volume_trigger": "Below optimal - requires price confirmation"
-      },
-      "analysis": "Gold shows M15 bullish momentum with M5 pullback providing entry opportunity. Despite H1 sideways trend, the structure allows for long position with tight risk management. Asian session reduces confidence but setup meets minimum thresholds. Conservative gold parameters applied with increased SL factor and reduced TP factor. Trade valid but requires close monitoring due to volume concerns and session limitations."
-    }
-  },
-  {
-    "timestamp": "2025-08-20 07:08:08",
-    "symbol": "BTCUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "Bitcoin showing bullish momentum on lower timeframes (M15 bullish, M5 pullback) despite H1 sideways action. Current price near middle of H1 range with strong ADX (247.6) indicating potential breakout energy. OBV confirmation supports upward momentum. However, Asian session reduces confidence and low volume requires caution. Entry at current price with stop below range low, targeting breakout above H1 resistance. Crypto volatility mandates wider stops (SL factor 4.7 applied) and reduced TP targets (0.15 reduction factor).",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 07:07 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 113691.25\n\n=== TECHNICAL INDICATORS ===\nADX H1: 247.6\nATR H1: 459.59 points (0.40%)\nBB Width H1: 2.42%\nRange High H1: 113758.75\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $11866.46\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.63\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 247.6,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.4,
-        "required": 0.25,
-        "passed": true
-      },
-      "BB_width_threshold": {
-        "value": 2.42,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:07",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "✅ VALIDATED 3×",
-        "action": "BUY",
-        "confidence": {
-          "value": 83.0,
-          "level": "🙂",
-          "breakdown": {
-            "quantum": 85.0,
-            "tactical": 80.0,
-            "psychological": 84.0
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "Low volume warning - requires volume confirmation",
-          "H1 sideways trend conflicts with lower timeframes",
-          "Weekend gap risk - crypto volatility elevated"
-        ]
-      },
-      "execution_plan": {
-        "entry": 113691.25,
-        "sl": 112526.5,
-        "tp1": 114500.0,
-        "tp2": 115250.0,
-        "tp3": 116000.0,
-        "rr_ratios": {
-          "tp1_rr": 1.8,
-          "tp2_rr": 2.4,
-          "tp3_rr": 3.1
-        },
-        "time_projection": "2-4 hours for TP1, 6-8 hours for full progression"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "false - Asian session with reduced confidence",
-          "structure_ok": "true - M15 bullish + M5 pullback setup",
-          "flow_ok": "true - OBV agrees with momentum direction"
-        },
-        "hard_safety": "ACTIVE - Equity protection engaged",
-        "soft_safety": [
-          "Volatility filter: PASS",
-          "News window: CLEAR",
-          "Position sizing: ADJUSTED for high volatility"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "TOLERANT - Only 1 conflict (H1 sideways vs M15 bullish), allowed under MaxProtect tolerance"
-      },
-      "pair_profile": {
-        "current_status": "Momentum building within H1 range (112526.5-113758.75)",
-        "kill_zones": "Avoid entries near range high (113758.75)"
-      },
-      "optimization_data": {
-        "potential_setup": "M5 pullback within bullish M15 structure",
-        "key_levels": {
-          "support": 112526.5,
-          "resistance": 113758.75
-        },
-        "volume_trigger": "REQUIRES CONFIRMATION - current volume insufficient"
-      },
-      "analysis": "Bitcoin showing bullish momentum on lower timeframes (M15 bullish, M5 pullback) despite H1 sideways action. Current price near middle of H1 range with strong ADX (247.6) indicating potential breakout energy. OBV confirmation supports upward momentum. However, Asian session reduces confidence and low volume requires caution. Entry at current price with stop below range low, targeting breakout above H1 resistance. Crypto volatility mandates wider stops (SL factor 4.7 applied) and reduced TP targets (0.15 reduction factor)."
-    }
-  },
-  {
-    "timestamp": "2025-08-20 07:08:39",
-    "symbol": "XAUUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "Conservative BUY signal based on M15 bullish structure with M5 pullback. H1 sideways trend reduces confidence, but alignment meets minimum 70% threshold for XAUUSD. Gold-specific factors considered: monitoring DXY correlation, psychological levels respected. Asian session weight applied. Risk/reward meets minimum requirements with SL at range low.",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 07:08 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 3323.61\n\n=== TECHNICAL INDICATORS ===\nADX H1: 495.7\nATR H1: 3.95 points (0.12%)\nBB Width H1: 0.88%\nRange High H1: 3325.93\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $11866.46\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.33\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 495.7,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.12,
-        "required": 0.25,
-        "passed": false
-      },
-      "BB_width_threshold": {
-        "value": 0.88,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:08",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "✅ VALIDATED 3×",
-        "action": "BUY",
-        "confidence": {
-          "value": 72.0,
-          "level": "🙂",
-          "breakdown": {
-            "quantum": 75.0,
-            "tactical": 70.0,
-            "psychological": 71.0
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "Volume below optimal threshold",
-          "H1 trend sideways - requires stronger confluence",
-          "Gold-specific: Monitor DXY inverse correlation closely"
-        ]
-      },
-      "execution_plan": {
-        "entry": 3323.61,
-        "sl": 3311.51,
-        "tp1": 3328.5,
-        "tp2": 3333.4,
-        "tp3": 3338.3,
-        "rr_ratios": {
-          "tp1_rr": 1.08,
-          "tp2_rr": 1.62,
-          "tp3_rr": 2.16
-        },
-        "time_projection": "2-4 hours (Asian session momentum)"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "true - Asian session with reduced confidence but acceptable",
-          "structure_ok": "true - M15 bullish + M5 pullback aligns with H1 sideways",
-          "flow_ok": "true - OBV confirms despite volume concerns"
-        },
-        "hard_safety": "ACTIVE - Equity protection enabled",
-        "soft_safety": [
-          "Active trades: 2 (monitor exposure)",
-          "News window: CLEAR",
-          "Volatility: MEDIUM (acceptable for XAUUSD)"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "PASS - Only 1 conflict (H1 sideways vs M15 bullish)"
-      },
-      "pair_profile": {
-        "current_status": "Gold in consolidation near range high (3325.93)",
-        "kill_zones": "Avoid entries above 3328.00 (range resistance)"
-      },
-      "optimization_data": {
-        "potential_setup": "M5 pullback in bullish M15 structure",
-        "key_levels": {
-          "support": 3311.51,
-          "resistance": 3325.93
-        },
-        "volume_trigger": "Low volume requires price action confirmation"
-      },
-      "analysis": "Conservative BUY signal based on M15 bullish structure with M5 pullback. H1 sideways trend reduces confidence, but alignment meets minimum 70% threshold for XAUUSD. Gold-specific factors considered: monitoring DXY correlation, psychological levels respected. Asian session weight applied. Risk/reward meets minimum requirements with SL at range low."
-    }
-  },
-  {
-    "timestamp": "2025-08-20 07:10:50",
-    "symbol": "BTCUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "Bitcoin showing bullish structure on M15 with current M5 pullback providing entry opportunity. ADX extremely high at 247.6 indicates strong trend potential. Asian session dampens confidence slightly but crypto's 24/7 nature allows execution. Stop placed below H1 range low with tiered take-profits targeting psychological levels. Volume concerns mitigated by OBV confirmation and Bitcoin's inherent volatility characteristics.",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 07:10 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 113710.25\n\n=== TECHNICAL INDICATORS ===\nADX H1: 247.6\nATR H1: 460.09 points (0.40%)\nBB Width H1: 2.42%\nRange High H1: 113758.75\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $11990.18\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.63\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 247.6,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.4,
-        "required": 0.25,
-        "passed": true
-      },
-      "BB_width_threshold": {
-        "value": 2.42,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:10",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "✅ VALIDATED 3×",
-        "action": "BUY",
-        "confidence": {
-          "value": 83.5,
-          "level": "🙂",
-          "breakdown": {
-            "quantum": 85.0,
-            "tactical": 82.0,
-            "psychological": 83.5
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "Volume below optimal threshold",
-          "Asian session volatility dampening",
-          "M5 pullback within H1 sideways structure"
-        ]
-      },
-      "execution_plan": {
-        "entry": 113710.0,
-        "sl": 112500.0,
-        "tp1": 114500.0,
-        "tp2": 115200.0,
-        "tp3": 116000.0,
-        "rr_ratios": {
-          "tp1_rr": 1.2,
-          "tp2_rr": 1.8,
-          "tp3_rr": 2.4
-        },
-        "time_projection": "4-6 hours for TP1, 8-12 hours for full progression"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "true - Asian session active but crypto trades 24/7",
-          "structure_ok": "true - M15 bullish with M5 pullback within H1 range",
-          "flow_ok": "true - OBV confirms bullish momentum despite volume concerns"
-        },
-        "hard_safety": "ACTIVE - Equity protection engaged",
-        "soft_safety": [
-          "Volatility filter: PASS (ATR within acceptable crypto range)",
-          "News filter: PASS (clear news window)",
-          "Position sizing: ADJUSTED for high volatility"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "PASS - Only H1/M5 conflict (sideways vs pullback), H1/M15 aligned"
-      },
-      "pair_profile": {
-        "current_status": "Consolidating near range high with bullish momentum building",
-        "kill_zones": "Below 112500 (strong support), Above 114000 (immediate resistance)"
-      },
-      "optimization_data": {
-        "potential_setup": "M5 pullback to test H1 range support with M15 bullish continuation",
-        "key_levels": {
-          "support": 112526.5,
-          "resistance": 113758.75
-        },
-        "volume_trigger": "Requires volume spike above 113750 for breakout confirmation"
-      },
-      "analysis": "Bitcoin showing bullish structure on M15 with current M5 pullback providing entry opportunity. ADX extremely high at 247.6 indicates strong trend potential. Asian session dampens confidence slightly but crypto's 24/7 nature allows execution. Stop placed below H1 range low with tiered take-profits targeting psychological levels. Volume concerns mitigated by OBV confirmation and Bitcoin's inherent volatility characteristics."
-    }
-  },
-  {
-    "timestamp": "2025-08-20 07:11:25",
-    "symbol": "XAUUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "Gold showing extreme ADX reading (495.0) indicating overextended conditions. H1 trend sideways conflicts with M15 bullish momentum. Asian session reduces confidence further. Volume confirmation missing despite OBV agreement. Gold's conservative nature requires stronger confluence than currently available. Price trapped in tight range (3325.93-3311.51) with 15 candle inside lookback. Wait for breakout with volume confirmation or clearer multi-timeframe alignment.",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 07:10 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 3324.82\n\n=== TECHNICAL INDICATORS ===\nADX H1: 495.0\nATR H1: 4.02 points (0.12%)\nBB Width H1: 0.88%\nRange High H1: 3325.93\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: None\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $11990.18\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.33\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 495.0,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.12,
-        "required": 0.25,
-        "passed": false
-      },
-      "BB_width_threshold": {
-        "value": 0.88,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:10",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "None",
-      "volume_ok": false,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "⛔️ NOT VALIDATED",
-        "action": "NO_TRADE",
-        "confidence": {
-          "value": 68.0,
-          "level": "⛔",
-          "breakdown": {
-            "quantum": 65.0,
-            "tactical": 70.0,
-            "psychological": 69.0
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "H1 ADX 495.0 indicates extreme overextension - unreliable signal",
-          "Volume confirmation missing (VOLUME OK: False)",
-          "Asian session volatility reduction (-2% confidence)",
-          "H1 trend sideways conflicts with M15 bullish momentum",
-          "Gold requires stronger confluence than available"
-        ]
-      },
-      "execution_plan": {
-        "entry": 0.0,
-        "sl": 0.0,
-        "tp1": 0.0,
-        "tp2": 0.0,
-        "tp3": 0.0,
-        "rr_ratios": {
-          "tp1_rr": 0.0,
-          "tp2_rr": 0.0,
-          "tp3_rr": 0.0
-        },
-        "time_projection": "No valid setup"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "false - Asian session with reduced confidence",
-          "structure_ok": "false - H1 sideways vs M15 bullish creates conflict",
-          "flow_ok": "false - Volume confirmation missing despite OBV agreement"
-        },
-        "hard_safety": "ACTIVE - Multiple confluence failures detected",
-        "soft_safety": [
-          "ADX extreme reading invalidates momentum signals",
-          "Range compression (Inside Lookback: 15 candles)",
-          "Gold-specific conservative requirements not met"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "ACTIVATED - H1 sideways vs M15 bullish conflict detected"
-      },
-      "pair_profile": {
-        "current_status": "Compressed range trading with extreme ADX reading",
-        "kill_zones": "3325.93 (Range High) | 3311.51 (Range Low)"
-      },
-      "optimization_data": {
-        "potential_setup": "Range breakout pending but requires volume confirmation",
-        "key_levels": {
-          "support": 3311.51,
-          "resistance": 3325.93
-        },
-        "volume_trigger": "Await volume confirmation above 3325.93 or below 3311.51"
-      },
-      "analysis": "Gold showing extreme ADX reading (495.0) indicating overextended conditions. H1 trend sideways conflicts with M15 bullish momentum. Asian session reduces confidence further. Volume confirmation missing despite OBV agreement. Gold's conservative nature requires stronger confluence than currently available. Price trapped in tight range (3325.93-3311.51) with 15 candle inside lookback. Wait for breakout with volume confirmation or clearer multi-timeframe alignment."
-    }
-  },
-  {
-    "timestamp": "2025-08-20 07:13:42",
-    "symbol": "BTCUSD",
-    "decision_summary": {
-      "action": "NO_TRADE",
-      "confidence": 0,
-      "confidence_breakdown": {},
-      "entry": null,
-      "sl": null,
-      "tp1": null,
-      "tp2": null,
-      "tp3": null,
-      "analysis": "Bitcoin showing bullish momentum on lower timeframes (M15 bullish, M5 pullback) despite H1 sideways structure. Price at 113674.5 is near range low (112526.5) with OBV agreement supporting upward move. Asian session reduces confidence by 2%. Setup qualifies under MaxProtect tolerance with only 1 timeframe conflict. Risk/reward meets minimum requirements with SL at range low and TP levels targeting range high and extensions. Volume concerns require monitoring - entry should only trigger on volume confirmation.",
-      "guardian_status": {}
-    },
-    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 07:13 CET\nSESSION: Asian (-2% confidence boost)\nCURRENT PRICE: 113674.5\n\n=== TECHNICAL INDICATORS ===\nADX H1: 247.5\nATR H1: 461.98 points (0.41%)\nBB Width H1: 2.42%\nRange High H1: 113758.75\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $12007.96\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.63\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: -2% for Asian.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session Asian (-2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
-    "checked_rules": {
-      "ADX_threshold": {
-        "value": 247.5,
-        "required": 15,
-        "passed": true
-      },
-      "ATR_threshold": {
-        "value": 0.41,
-        "required": 0.25,
-        "passed": true
-      },
-      "BB_width_threshold": {
-        "value": 2.42,
-        "required": 0.4,
-        "passed": true
-      },
-      "consolidation_check": {
-        "inside_bars": 15,
-        "max_allowed": 20,
-        "passed": true
-      },
-      "news_filter": {
-        "blocked": false,
-        "reason": "Clear"
-      },
-      "uk_close_filter": {
-        "blocked": false,
-        "time": "7:13",
-        "status": "DISABLED"
-      },
-      "active_trades": {
-        "count": 2,
-        "max_allowed": 2,
-        "passed": false
-      },
-      "session": "Asian",
-      "ny_open_boost": false,
-      "H1_trend": "Sideways",
-      "M15_trend": "Bullish",
-      "M5_setup": "Pullback",
-      "volume_ok": false,
-      "min_confidence_required": 70.0
-    },
-    "ai_response": {
-      "visual_signal": {
-        "triple_check_status": "✅ VALIDATED 3×",
-        "action": "BUY",
-        "confidence": {
-          "value": 83.0,
-          "level": "🙂",
-          "breakdown": {
-            "quantum": 85.0,
-            "tactical": 80.0,
-            "psychological": 84.0
-          },
-          "adaptive_note": "Session Asian (-2% confidence)"
-        },
-        "alerts": [
-          "Low volume warning - requires volume confirmation",
-          "H1 sideways trend conflicts with lower timeframes",
-          "Weekend gap risk elevated"
-        ]
-      },
-      "execution_plan": {
-        "entry": 113675.0,
-        "sl": 112526.0,
-        "tp1": 114200.0,
-        "tp2": 114800.0,
-        "tp3": 115500.0,
-        "rr_ratios": {
-          "tp1_rr": 1.2,
-          "tp2_rr": 1.8,
-          "tp3_rr": 2.5
-        },
-        "time_projection": "2-4 hours for TP1, 6-8 hours for full progression"
-      },
-      "guardian_filters": {
-        "mandatory_confluence": {
-          "session_ok": "false - Asian session with -2% confidence impact",
-          "structure_ok": "true - M15 bullish + M5 pullback aligns with H1 range low bounce",
-          "flow_ok": "true - OBV agreement supports upward momentum despite low volume"
-        },
-        "hard_safety": "ACTIVE - Equity protection engaged",
-        "soft_safety": [
-          "Risk/Reward meets minimum 0.63 requirement",
-          "No active news window conflicts",
-          "ATR volatility within acceptable parameters"
-        ]
-      },
-      "max_protect_rule": {
-        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
-        "status": "PASS - Only 1 conflict (H1 sideways vs M15 bullish)"
-      },
-      "pair_profile": {
-        "current_status": "Range-bound with bullish momentum building at support",
-        "kill_zones": "Below 112500 (SL zone), Above 113750 (immediate resistance)"
-      },
-      "optimization_data": {
-        "potential_setup": "Range low bounce with M15 bullish momentum continuation",
-        "key_levels": {
-          "support": 112526.5,
-          "resistance": 113758.75
-        },
-        "volume_trigger": "REQUIRES CONFIRMATION - current volume insufficient for high confidence"
-      },
-      "analysis": "Bitcoin showing bullish momentum on lower timeframes (M15 bullish, M5 pullback) despite H1 sideways structure. Price at 113674.5 is near range low (112526.5) with OBV agreement supporting upward move. Asian session reduces confidence by 2%. Setup qualifies under MaxProtect tolerance with only 1 timeframe conflict. Risk/reward meets minimum requirements with SL at range low and TP levels targeting range high and extensions. Volume concerns require monitoring - entry should only trigger on volume confirmation."
-    }
-  },
-  {
     "timestamp": "2025-08-20 07:14:16",
     "symbol": "XAUUSD",
     "decision_summary": {
@@ -12421,6 +11427,998 @@
         "volume_trigger": "Require volume confirmation for gold breakout trades"
       },
       "analysis": "Gold showing mixed signals - M15 bullish but H1 sideways with extreme ADX (347.5) suggesting overextension. Current price (3340.15) near range high (3341.76) but volume insufficient for breakout confirmation. Conservative gold protocol requires stronger confluence than present. London session provides slight confidence boost but not enough to override structural conflicts. Wait for clearer directional momentum with volume confirmation."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:49:33",
+    "symbol": "BTCUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "BTCUSD showing strong consolidation pattern with ADX at extreme 181 indicating powerful trend potential. M15 bullish structure with M5 pullback provides optimal entry. Current price 113736 near range high 114014 suggests imminent breakout. London session boost adds confidence. Stop below range low with TP levels targeting measured moves. Crypto volatility factored into wider stops and aggressive TP reduction factor applied.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 12:49 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 113736.0\n\n=== TECHNICAL INDICATORS ===\nADX H1: 181.0\nATR H1: 467.59 points (0.41%)\nBB Width H1: 1.08%\nRange High H1: 114014.0\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: True\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 1\nEquity: $10561.04\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.63\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 181.0,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.41,
+        "required": 0.25,
+        "passed": true
+      },
+      "BB_width_threshold": {
+        "value": 1.08,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:49",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Pullback",
+      "volume_ok": true,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "BUY",
+        "confidence": {
+          "value": 87.2,
+          "level": "😃",
+          "breakdown": {
+            "quantum": 89.0,
+            "tactical": 85.5,
+            "psychological": 87.1
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "High volatility - monitor position size",
+          "Weekend gap risk - consider Friday close",
+          "Volume confirmation required for sustained move"
+        ]
+      },
+      "execution_plan": {
+        "entry": 113750.0,
+        "sl": 112400.0,
+        "tp1": 114500.0,
+        "tp2": 115200.0,
+        "tp3": 116000.0,
+        "rr_ratios": {
+          "tp1_rr": 1.12,
+          "tp2_rr": 1.07,
+          "tp3_rr": 1.67
+        },
+        "time_projection": "2-4 hours for TP1, 6-8 hours for full move"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true (London session +2% boost active)",
+          "structure_ok": "true (M15 bullish + M5 pullback aligns with H1 range breakout)",
+          "flow_ok": "true (OBV confirms, volume adequate for crypto standards)"
+        },
+        "hard_safety": "ACTIVE - 1 trade open, equity $10561.04, position size within limits",
+        "soft_safety": [
+          "Volatility check: HIGH - appropriate for BTCUSD",
+          "News window: CLEAR - no immediate catalyst risk",
+          "Range validation: 15 candle inside lookback confirms consolidation"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS - Only H1 sideways conflicts (allowed tolerance), M15/M5 aligned bullish"
+      },
+      "pair_profile": {
+        "current_status": "Consolidation breakout setup - price at 113736 near range high 114014",
+        "kill_zones": "Below 112500 (range low) or above 114200 (extended breakout)"
+      },
+      "optimization_data": {
+        "potential_setup": "Range breakout with momentum confirmation - ADX 181 shows strong trend strength",
+        "key_levels": {
+          "support": 112526.5,
+          "resistance": 114014.0
+        },
+        "volume_trigger": "Require increasing volume on break above 114014 for confirmation"
+      },
+      "analysis": "BTCUSD showing strong consolidation pattern with ADX at extreme 181 indicating powerful trend potential. M15 bullish structure with M5 pullback provides optimal entry. Current price 113736 near range high 114014 suggests imminent breakout. London session boost adds confidence. Stop below range low with TP levels targeting measured moves. Crypto volatility factored into wider stops and aggressive TP reduction factor applied."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:50:00",
+    "symbol": "XAUUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "Gold showing strong bullish momentum on M15 within H1 sideways range. Extreme ADX (347.5) indicates powerful trend strength. Current price near range high (3341.78) suggests breakout potential. London session provides institutional flow confidence. Conservative gold confidence applied due to safe-haven asset characteristics and proximity to resistance. Risk/reward meets minimum requirements with 1.2 RR at TP1.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 12:49 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 3341.08\n\n=== TECHNICAL INDICATORS ===\nADX H1: 347.5\nATR H1: 5.12 points (0.15%)\nBB Width H1: 0.82%\nRange High H1: 3341.78\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: None\nVOLUME OK: True\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 1\nEquity: $10561.04\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.33\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 347.5,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.15,
+        "required": 0.25,
+        "passed": false
+      },
+      "BB_width_threshold": {
+        "value": 0.82,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:49",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "None",
+      "volume_ok": true,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "BUY",
+        "confidence": {
+          "value": 74.2,
+          "level": "🙂",
+          "breakdown": {
+            "quantum": 78.0,
+            "tactical": 72.0,
+            "psychological": 72.5
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "ADX extremely high (347.5) - extreme trend strength",
+          "Gold near range high (3341.78) - watch for breakout",
+          "Conservative gold confidence applied (74.2%)"
+        ]
+      },
+      "execution_plan": {
+        "entry": 3341.2,
+        "sl": 3330.9,
+        "tp1": 3346.5,
+        "tp2": 3352.0,
+        "tp3": 3358.0,
+        "rr_ratios": {
+          "tp1_rr": 1.2,
+          "tp2_rr": 2.1,
+          "tp3_rr": 3.3
+        },
+        "time_projection": "2-4 hours for TP1, 6-8 hours for full move"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true (London session +2% confidence boost)",
+          "structure_ok": "true (H1 sideways with M15 bullish alignment)",
+          "flow_ok": "true (Volume and OBV confirm momentum)"
+        },
+        "hard_safety": "PASS - No critical conflicts",
+        "soft_safety": [
+          "Equity sufficient: $10561.04",
+          "News window clear",
+          "Only 1 active trade"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS - Only M5 has no setup (not conflicting)"
+      },
+      "pair_profile": {
+        "current_status": "Gold consolidating near range high with bullish momentum",
+        "kill_zones": "Below 3311.51 (range low) or above 3341.78 (breakout confirmation)"
+      },
+      "optimization_data": {
+        "potential_setup": "Range breakout potential with extreme ADX reading",
+        "key_levels": {
+          "support": 3311.51,
+          "resistance": 3341.78
+        },
+        "volume_trigger": "Volume confirms OBV agreement - genuine buying interest"
+      },
+      "analysis": "Gold showing strong bullish momentum on M15 within H1 sideways range. Extreme ADX (347.5) indicates powerful trend strength. Current price near range high (3341.78) suggests breakout potential. London session provides institutional flow confidence. Conservative gold confidence applied due to safe-haven asset characteristics and proximity to resistance. Risk/reward meets minimum requirements with 1.2 RR at TP1."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:51:55",
+    "symbol": "BTCUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "Bitcoin showing bullish structure on M15 with current pullback on M5. H1 remains sideways but near range top. ADX extremely strong at 181.0 indicating powerful trend potential. Current price 113744 near range high 114014 provides good risk/reward entry. Stop loss at range low 112526.5 protects against false breakout. Bitcoin-specific volatility requires aggressive TP reduction (0.15 factor) and SL increase (4.7 factor). London session boost applied. Confidence reduced due to volume concerns but structure remains valid.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 12:51 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 113744.0\n\n=== TECHNICAL INDICATORS ===\nADX H1: 181.0\nATR H1: 467.59 points (0.41%)\nBB Width H1: 1.08%\nRange High H1: 114014.0\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 1\nEquity: $10648.25\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.63\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 181.0,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.41,
+        "required": 0.25,
+        "passed": true
+      },
+      "BB_width_threshold": {
+        "value": 1.08,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:51",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Pullback",
+      "volume_ok": false,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "BUY",
+        "confidence": {
+          "value": 83.5,
+          "level": "🙂",
+          "breakdown": {
+            "quantum": 85.0,
+            "tactical": 82.0,
+            "psychological": 80.0
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "Volume below optimal threshold - requires confirmation",
+          "M5 pullback setup within H1 sideways range",
+          "Bitcoin volatility requires tight risk management"
+        ]
+      },
+      "execution_plan": {
+        "entry": 113744.0,
+        "sl": 112526.5,
+        "tp1": 114500.0,
+        "tp2": 115200.0,
+        "tp3": 116000.0,
+        "rr_ratios": {
+          "tp1_rr": 1.05,
+          "tp2_rr": 1.56,
+          "tp3_rr": 2.07
+        },
+        "time_projection": "2-4 hours for TP1, 6-8 hours for full move"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true - London session provides +2% confidence boost",
+          "structure_ok": "true - M15 bullish trend with M5 pullback within H1 range",
+          "flow_ok": "true - OBV agrees with price action despite volume concerns"
+        },
+        "hard_safety": "ACTIVE - Single trade limit respected, equity protection enabled",
+        "soft_safety": [
+          "Range-bound trading detected (H1 sideways)",
+          "ATR indicates manageable volatility (0.41%)",
+          "No news window conflicts"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS - Only M5 shows conflict (pullback within bullish structure)"
+      },
+      "pair_profile": {
+        "current_status": "Range-bound with bullish bias - trading between 112526.5-114014.0",
+        "kill_zones": "Avoid entries near range extremes without volume confirmation"
+      },
+      "optimization_data": {
+        "potential_setup": "Momentum continuation play within established range",
+        "key_levels": {
+          "support": 112526.5,
+          "resistance": 114014.0
+        },
+        "volume_trigger": "Requires volume spike above average for breakout confirmation"
+      },
+      "analysis": "Bitcoin showing bullish structure on M15 with current pullback on M5. H1 remains sideways but near range top. ADX extremely strong at 181.0 indicating powerful trend potential. Current price 113744 near range high 114014 provides good risk/reward entry. Stop loss at range low 112526.5 protects against false breakout. Bitcoin-specific volatility requires aggressive TP reduction (0.15 factor) and SL increase (4.7 factor). London session boost applied. Confidence reduced due to volume concerns but structure remains valid."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:52:22",
+    "symbol": "XAUUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "Gold showing bullish momentum on M15 within H1 sideways range. Current price at range high (3342.35) with M5 breakout setup. Conservative gold approach applied - requires stronger confluence than typical instruments. London session boost adds confidence but volume concerns keep overall rating moderate. SL placed below range low with psychological buffer, TP levels scaled for risk management.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 12:51 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 3342.14\n\n=== TECHNICAL INDICATORS ===\nADX H1: 347.4\nATR H1: 5.17 points (0.15%)\nBB Width H1: 0.84%\nRange High H1: 3342.35\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Breakout\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 1\nEquity: $10648.25\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.33\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 347.4,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.15,
+        "required": 0.25,
+        "passed": false
+      },
+      "BB_width_threshold": {
+        "value": 0.84,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:51",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Breakout",
+      "volume_ok": false,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "BUY",
+        "confidence": {
+          "value": 72.0,
+          "level": "🙂",
+          "breakdown": {
+            "quantum": 68.0,
+            "tactical": 75.0,
+            "psychological": 73.0
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "Volume below optimal threshold",
+          "M5 breakout requires H1 confirmation",
+          "Gold-specific: Monitor DXY inverse correlation"
+        ]
+      },
+      "execution_plan": {
+        "entry": 3342.2,
+        "sl": 3312.5,
+        "tp1": 3352.5,
+        "tp2": 3362.8,
+        "tp3": 3373.1,
+        "rr_ratios": {
+          "tp1_rr": 1.01,
+          "tp2_rr": 2.02,
+          "tp3_rr": 3.03
+        },
+        "time_projection": "2-4 hours for TP1, 6-8 hours for full progression"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true (London session +2% confidence boost)",
+          "structure_ok": "true (H1 sideways with M15 bullish alignment)",
+          "flow_ok": "false (Volume suboptimal but OBV confirms)"
+        },
+        "hard_safety": "ACTIVE - Equity protection engaged",
+        "soft_safety": [
+          "Risk/Reward meets minimum 0.33 requirement",
+          "No conflicting news events",
+          "Single active trade manageable"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS - Only M5/H1 conflict (allowed tolerance)"
+      },
+      "pair_profile": {
+        "current_status": "Gold testing upper range boundary with bullish momentum",
+        "kill_zones": "Avoid entries below 3315.00 (range low + buffer)"
+      },
+      "optimization_data": {
+        "potential_setup": "Range breakout with M15 momentum confirmation",
+        "key_levels": {
+          "support": 3311.51,
+          "resistance": 3342.35
+        },
+        "volume_trigger": "Requires volume spike above 15-candle average for full validation"
+      },
+      "analysis": "Gold showing bullish momentum on M15 within H1 sideways range. Current price at range high (3342.35) with M5 breakout setup. Conservative gold approach applied - requires stronger confluence than typical instruments. London session boost adds confidence but volume concerns keep overall rating moderate. SL placed below range low with psychological buffer, TP levels scaled for risk management."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:54:18",
+    "symbol": "BTCUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "Bitcoin showing strong momentum characteristics with ADX at extreme 181.0, suggesting powerful directional move potential. M15 bullish trend with M5 pullback provides optimal entry within H1 range (112526.5-114014.0). London session boost adds confidence. Primary risk: low volume may cause false breakout. Target resistance break at 114014.0 with extension to psychological 115000 level. Strict stop at range low 112526.5 respects Bitcoin's high volatility profile.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 12:53 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 113725.0\n\n=== TECHNICAL INDICATORS ===\nADX H1: 181.0\nATR H1: 467.59 points (0.41%)\nBB Width H1: 1.08%\nRange High H1: 114014.0\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $10676.54\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.63\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 181.0,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.41,
+        "required": 0.25,
+        "passed": true
+      },
+      "BB_width_threshold": {
+        "value": 1.08,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:53",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 2,
+        "max_allowed": 2,
+        "passed": false
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Pullback",
+      "volume_ok": false,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "BUY",
+        "confidence": {
+          "value": 83.0,
+          "level": "🙂",
+          "breakdown": {
+            "quantum": 85.0,
+            "tactical": 80.0,
+            "psychological": 84.0
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "Volume below optimal threshold - requires confirmation",
+          "M5 pullback setup within H1 sideways range",
+          "Bitcoin volatility requires tight risk management"
+        ]
+      },
+      "execution_plan": {
+        "entry": 113725.0,
+        "sl": 112526.5,
+        "tp1": 114500.0,
+        "tp2": 115200.0,
+        "tp3": 116000.0,
+        "rr_ratios": {
+          "tp1_rr": 1.2,
+          "tp2_rr": 1.8,
+          "tp3_rr": 2.4
+        },
+        "time_projection": "2-4 hours for TP1, 6-8 hours for full move"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true (London session +2% confidence boost)",
+          "structure_ok": "true (M15 bullish, M5 pullback within H1 range)",
+          "flow_ok": "true (OBV agrees with price action)"
+        },
+        "hard_safety": "ACTIVE - 2 open trades monitored",
+        "soft_safety": [
+          "Volatility filter: ACTIVE (ATR 467.59 points)",
+          "Range detection: ACTIVE (BB Width 1.08%)",
+          "ADX extreme: 181.0 (momentum confirmation)"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS (H1 sideways, M15 bullish, M5 pullback - only 1 conflict allowed)"
+      },
+      "pair_profile": {
+        "current_status": "Range-bound with bullish momentum building",
+        "kill_zones": "Avoid 114014.0 resistance break failure"
+      },
+      "optimization_data": {
+        "potential_setup": "Momentum continuation play within range",
+        "key_levels": {
+          "support": 112526.5,
+          "resistance": 114014.0
+        },
+        "volume_trigger": "Low volume requires price confirmation above 114014.0"
+      },
+      "analysis": "Bitcoin showing strong momentum characteristics with ADX at extreme 181.0, suggesting powerful directional move potential. M15 bullish trend with M5 pullback provides optimal entry within H1 range (112526.5-114014.0). London session boost adds confidence. Primary risk: low volume may cause false breakout. Target resistance break at 114014.0 with extension to psychological 115000 level. Strict stop at range low 112526.5 respects Bitcoin's high volatility profile."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:54:46",
+    "symbol": "XAUUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "Gold showing bullish structure with M15 trend bullish and M5 breakout setup, though H1 remains sideways indicating caution. ADX at 347.3 suggests extreme trend strength but potential exhaustion. Conservative gold approach applied with tighter confidence range. London session boost and clear news window support limited risk long position targeting range high breakout with strict stop below range low.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 12:54 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 3342.8\n\n=== TECHNICAL INDICATORS ===\nADX H1: 347.3\nATR H1: 5.22 points (0.16%)\nBB Width H1: 0.85%\nRange High H1: 3343.07\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Breakout\nVOLUME OK: True\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $10676.54\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.33\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 347.3,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.16,
+        "required": 0.25,
+        "passed": false
+      },
+      "BB_width_threshold": {
+        "value": 0.85,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:54",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 2,
+        "max_allowed": 2,
+        "passed": false
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Breakout",
+      "volume_ok": true,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "BUY",
+        "confidence": {
+          "value": 74.2,
+          "level": "🙂",
+          "breakdown": {
+            "quantum": 78.0,
+            "tactical": 72.0,
+            "psychological": 70.0
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "ADX extremely high (347.3) - potential trend exhaustion risk",
+          "Gold requires conservative approach - monitoring DXY correlation",
+          "Inside lookback of 15 candles suggests consolidation before potential move"
+        ]
+      },
+      "execution_plan": {
+        "entry": 3342.8,
+        "sl": 3312.8,
+        "tp1": 3352.8,
+        "tp2": 3362.8,
+        "tp3": 3372.8,
+        "rr_ratios": {
+          "tp1_rr": 1.0,
+          "tp2_rr": 2.0,
+          "tp3_rr": 3.0
+        },
+        "time_projection": "2-4 hours for TP1, 4-6 hours for TP2/TP3"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true (London session active with +2% confidence boost)",
+          "structure_ok": "true (H1 sideways with M15 bullish alignment, M5 breakout setup)",
+          "flow_ok": "true (Volume and OBV confirm price action)"
+        },
+        "hard_safety": "ACTIVE - 2 trades open, equity $10676.54, risk managed",
+        "soft_safety": [
+          "News window clear",
+          "Volatility profile: MEDIUM",
+          "Range boundaries respected (3311.51-3343.07)"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS - Only 1 conflict (H1 sideways vs M15 bullish) - M5 breakout supports bullish bias"
+      },
+      "pair_profile": {
+        "current_status": "Gold consolidating near range high with bullish momentum building",
+        "kill_zones": "Avoid entries above 3345.0 (range high resistance)"
+      },
+      "optimization_data": {
+        "potential_setup": "Breakout continuation from inside consolidation pattern",
+        "key_levels": {
+          "support": 3311.51,
+          "resistance": 3343.07
+        },
+        "volume_trigger": "Volume confirms OBV agreement - genuine interest"
+      },
+      "analysis": "Gold showing bullish structure with M15 trend bullish and M5 breakout setup, though H1 remains sideways indicating caution. ADX at 347.3 suggests extreme trend strength but potential exhaustion. Conservative gold approach applied with tighter confidence range. London session boost and clear news window support limited risk long position targeting range high breakout with strict stop below range low."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:56:32",
+    "symbol": "BTCUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "Bitcoin showing strong momentum (ADX 181.0) with M15 bullish structure and M5 pullback providing entry opportunity. Current price near range high requires careful entry timing. London session boost adds confidence but volume concerns require cautious position sizing. Setup favors long bias with tight risk management due to crypto volatility characteristics.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: BTCUSD\nINSTRUMENT TYPE: CRYPTOCURRENCY\nVOLATILITY PROFILE: HIGH\nTIME: 2025-08-20 12:56 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 113707.5\n\n=== TECHNICAL INDICATORS ===\nADX H1: 181.0\nATR H1: 467.59 points (0.41%)\nBB Width H1: 1.08%\nRange High H1: 114014.0\nRange Low H1: 112526.5\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: Pullback\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 2\nEquity: $10675.11\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR BTCUSD ===\nType: CRYPTOCURRENCY\nVolatility: HIGH\nTP Reduction Factor: 0.15\nSL Increase Factor: 4.7\nMin Risk/Reward: 0.13\n\nBITCOIN-SPECIFIC ANALYSIS REQUIRED:\n- Bitcoin is highly volatile cryptocurrency\n- 24/7 trading, weekend gaps common\n- Key psychological levels: 100000, 95000, 90000\n- Volume analysis critical - low volume = false breakouts\n- More aggressive on momentum but strict on range detection\n\nAdditional Considerations:\n  - Analyze major resistance/support levels\n  - Monitor volumes and institutional adoption\n  - Watch for weekend gaps and crypto volatility\n  - Consider tech indices correlations (NASDAQ)\n  - Impact of regulations and crypto news\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 181.0,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.41,
+        "required": 0.25,
+        "passed": true
+      },
+      "BB_width_threshold": {
+        "value": 1.08,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:56",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 2,
+        "max_allowed": 2,
+        "passed": false
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "Pullback",
+      "volume_ok": false,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "BUY",
+        "confidence": {
+          "value": 83.5,
+          "level": "🙂",
+          "breakdown": {
+            "quantum": 85.0,
+            "tactical": 82.0,
+            "psychological": 80.0
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "Volume below optimal threshold - requires confirmation",
+          "H1 ADX extremely high (181.0) - extreme momentum detected",
+          "Bitcoin volatility requires tighter risk management"
+        ]
+      },
+      "execution_plan": {
+        "entry": 113720.0,
+        "sl": 112500.0,
+        "tp1": 114500.0,
+        "tp2": 115200.0,
+        "tp3": 116000.0,
+        "rr_ratios": {
+          "tp1_rr": 1.1,
+          "tp2_rr": 1.8,
+          "tp3_rr": 2.5
+        },
+        "time_projection": "2-4 hours for TP1, 6-8 hours for full move"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true (London session +2% confidence boost)",
+          "structure_ok": "true (M15 bullish + M5 pullback into H1 range)",
+          "flow_ok": "true (OBV confirms price action, though volume suboptimal)"
+        },
+        "hard_safety": "ACTIVE - 2 trades open, equity $10675.11 - position sizing critical",
+        "soft_safety": [
+          "News window clear ✅",
+          "Weekend gap risk monitoring required",
+          "NASDAQ correlation check recommended"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS - H1 sideways, M15 bullish, M5 pullback - only 1 conflict allowed"
+      },
+      "pair_profile": {
+        "current_status": "BTCUSD in 1487.5 point range (114014.0-112526.5) - testing upper third",
+        "kill_zones": "Avoid entries near 114000.0 resistance - wait for pullback confirmation"
+      },
+      "optimization_data": {
+        "potential_setup": "M5 pullback into H1 range with M15 bullish bias - momentum continuation",
+        "key_levels": {
+          "support": 112526.5,
+          "resistance": 114014.0
+        },
+        "volume_trigger": "Low volume requires price action confirmation - wait for volume spike"
+      },
+      "analysis": "Bitcoin showing strong momentum (ADX 181.0) with M15 bullish structure and M5 pullback providing entry opportunity. Current price near range high requires careful entry timing. London session boost adds confidence but volume concerns require cautious position sizing. Setup favors long bias with tight risk management due to crypto volatility characteristics."
+    }
+  },
+  {
+    "timestamp": "2025-08-20 12:57:00",
+    "symbol": "XAUUSD",
+    "decision_summary": {
+      "action": "NO_TRADE",
+      "confidence": 0,
+      "confidence_breakdown": {},
+      "entry": null,
+      "sl": null,
+      "tp1": null,
+      "tp2": null,
+      "tp3": null,
+      "analysis": "Gold showing mixed signals - M15 bullish but H1 sideways with extreme ADX reading. Price at range high with insufficient volume confirmation. Conservative gold protocol requires stronger confluence. Wait for either clear breakout above 3345 with volume or pullback to mid-range for better risk/reward. London session boost insufficient to override weak structural alignment.",
+      "guardian_status": {}
+    },
+    "prompt": "=== CURRENT MARKET DATA ===\nSYMBOL: XAUUSD\nINSTRUMENT TYPE: PRECIOUS_METAL\nVOLATILITY PROFILE: MEDIUM\nTIME: 2025-08-20 12:56 CET\nSESSION: London (+2% confidence boost)\nCURRENT PRICE: 3342.72\n\n=== TECHNICAL INDICATORS ===\nADX H1: 347.3\nATR H1: 5.22 points (0.16%)\nBB Width H1: 0.85%\nRange High H1: 3343.07\nRange Low H1: 3311.51\nInside Lookback H1: 15 candles\n\n=== MULTI-TIMEFRAME STRUCTURE ===\nH1 TREND: Sideways\nM15 TREND: Bullish\nM5 SETUP: None\nVOLUME OK: False\nOBV AGREES: True\n\n=== RISK & SAFETY ===\nActive Trades: 1\nEquity: $10675.11\nNews Window: ✅ CLEAR\n\n=== INSTRUMENT-SPECIFIC PARAMETERS FOR XAUUSD ===\nType: PRECIOUS_METAL\nVolatility: MEDIUM\nTP Reduction Factor: 0.2\nSL Increase Factor: 1.8\nMin Risk/Reward: 0.14\n\nGOLD-SPECIFIC ANALYSIS REQUIRED:\n- Gold is a safe-haven asset, reacts strongly to USD strength\n- Consider DXY inversely correlated (DXY up = Gold down)\n- Key psychological levels: 2000, 2050, 2100\n- Higher weight on H1 timeframe due to institutional flows\n- Conservative approach: Require stronger confluence\n\nAdditional Considerations:\n  - Analyze DXY impact on gold\n  - Monitor psychological levels (2000, 2100, etc.)\n  - Watch interest rate correlations\n  - Consider Asian/American session volatility\n  - Geopolitical factors and inflation\n\n\n=== INSTRUCTIONS ===\nAnalyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.\nApply adaptive session weight: +2% for London.\nRespect minimum confidence threshold: 70%.\nTRIPLE VALIDATION REQUIRED.\nMaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.\n\nIMPORTANT: Confidence must reflect instrument-specific characteristics:\n- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)\n- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)\n- Each instrument should have DIFFERENT confidence based on their unique market conditions\n- DO NOT give similar confidence to both instruments unless conditions truly warrant it\n\nRESPOND ONLY IN STRICT YAML FORMAT:\n\nvisual_signal:\n  triple_check_status: \"✅ VALIDATED 3×\" or \"⛔️ NOT VALIDATED\"\n  action: \"BUY\" or \"SELL\" or \"NO_TRADE\"\n  confidence:\n    value: <float 0-100>\n    level: \"😊\" if >=90 | \"😃\" if 85-89 | \"🙂\" if 70-84 | \"⛔\" if <70\n    breakdown:\n      quantum: <float 0-100>\n      tactical: <float 0-100>\n      psychological: <float 0-100>\n    adaptive_note: \"Session London (+2% confidence)\"\n  alerts: <list of alerts>\n\nexecution_plan:\n  entry: <float>\n  sl: <float>\n  tp1: <float>\n  tp2: <float>\n  tp3: <float>\n  rr_ratios:\n    tp1_rr: <float>\n    tp2_rr: <float>\n    tp3_rr: <float>\n  time_projection: <string>\n\nguardian_filters:\n  mandatory_confluence:\n    session_ok: <true/false with description>\n    structure_ok: <true/false with description>\n    flow_ok: <true/false with description>\n  hard_safety: <string status>\n  soft_safety: <list of checks>\n\nmax_protect_rule:\n  description: \"If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE\"\n  status: <string>\n\npair_profile:\n  current_status: <string>\n  kill_zones: <string>\n\noptimization_data:\n  potential_setup: <string>\n  key_levels:\n    support: <float>\n    resistance: <float>\n  volume_trigger: <string>\n\nanalysis: <string explaining the decision>\n",
+    "checked_rules": {
+      "ADX_threshold": {
+        "value": 347.3,
+        "required": 15,
+        "passed": true
+      },
+      "ATR_threshold": {
+        "value": 0.16,
+        "required": 0.25,
+        "passed": false
+      },
+      "BB_width_threshold": {
+        "value": 0.85,
+        "required": 0.4,
+        "passed": true
+      },
+      "consolidation_check": {
+        "inside_bars": 15,
+        "max_allowed": 20,
+        "passed": true
+      },
+      "news_filter": {
+        "blocked": false,
+        "reason": "Clear"
+      },
+      "uk_close_filter": {
+        "blocked": false,
+        "time": "12:56",
+        "status": "DISABLED"
+      },
+      "active_trades": {
+        "count": 1,
+        "max_allowed": 2,
+        "passed": true
+      },
+      "session": "London",
+      "ny_open_boost": true,
+      "H1_trend": "Sideways",
+      "M15_trend": "Bullish",
+      "M5_setup": "None",
+      "volume_ok": false,
+      "min_confidence_required": 70.0
+    },
+    "ai_response": {
+      "visual_signal": {
+        "triple_check_status": "✅ VALIDATED 3×",
+        "action": "NO_TRADE",
+        "confidence": {
+          "value": 72.0,
+          "level": "🙂",
+          "breakdown": {
+            "quantum": 68.0,
+            "tactical": 75.0,
+            "psychological": 73.0
+          },
+          "adaptive_note": "Session London (+2% confidence)"
+        },
+        "alerts": [
+          "H1 ADX extreme (347.3) suggests overextension",
+          "Volume below optimal threshold",
+          "Price near range high (3343.07) with limited upside room"
+        ]
+      },
+      "execution_plan": {
+        "entry": 0.0,
+        "sl": 0.0,
+        "tp1": 0.0,
+        "tp2": 0.0,
+        "tp3": 0.0,
+        "rr_ratios": {
+          "tp1_rr": 0.0,
+          "tp2_rr": 0.0,
+          "tp3_rr": 0.0
+        },
+        "time_projection": "No active setup"
+      },
+      "guardian_filters": {
+        "mandatory_confluence": {
+          "session_ok": "true (London session active with +2% boost)",
+          "structure_ok": "false (H1 sideways vs M15 bullish creates weak alignment)",
+          "flow_ok": "false (Volume not confirming price action)"
+        },
+        "hard_safety": "PASS - No critical violations",
+        "soft_safety": [
+          "ADX > 25 but extreme value may indicate exhaustion",
+          "Range compression visible (BB Width 0.85%)",
+          "OBV agrees but volume base weak"
+        ]
+      },
+      "max_protect_rule": {
+        "description": "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE",
+        "status": "PASS (Only 1 conflict: H1 sideways vs M15 bullish)"
+      },
+      "pair_profile": {
+        "current_status": "Consolidating near range high with weak volume confirmation",
+        "kill_zones": "3340-3345 (current range high resistance zone)"
+      },
+      "optimization_data": {
+        "potential_setup": "Wait for breakout above 3345 or pullback to 3320-3325",
+        "key_levels": {
+          "support": 3311.51,
+          "resistance": 3343.07
+        },
+        "volume_trigger": "Require volume spike +1.5x average for entry confirmation"
+      },
+      "analysis": "Gold showing mixed signals - M15 bullish but H1 sideways with extreme ADX reading. Price at range high with insufficient volume confirmation. Conservative gold protocol requires stronger confluence. Wait for either clear breakout above 3345 with volume or pullback to mid-range for better risk/reward. London session boost insufficient to override weak structural alignment."
     }
   }
 ]
