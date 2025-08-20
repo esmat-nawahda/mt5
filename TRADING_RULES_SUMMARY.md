@@ -11,15 +11,15 @@
 **EVERY trade uses NORMALIZATION factors applied to DeepSeek suggestions:**
 
 **Both BTCUSD and XAUUSD:**
-- **Stop Loss:** DeepSeek SL distance × 2.5
+- **Stop Loss:** DeepSeek SL distance × 1.25
 - **Take Profit:** DeepSeek TP distance × 0.15
-- **Risk/Reward Ratio:** 0.06 (0.15/2.5)
+- **Risk/Reward Ratio:** 0.12 (0.15/1.25)
 
 **Example:**
 - DeepSeek suggests: SL 100 points away, TP 200 points away
-- Final values: SL = 100 × 2.5 = 250 points, TP = 200 × 0.15 = 30 points
+- Final values: SL = 100 × 1.25 = 125 points, TP = 200 × 0.15 = 30 points
 
-**Purpose:** Protects capital with wider stops while taking quick profits
+**Purpose:** Balanced approach with moderate stop widening and quick profit-taking
 
 ---
 
@@ -92,9 +92,9 @@
 ### 3. **TP/SL ADJUSTMENTS - NORMALIZATION MODE 🎯**
 | Factor Type | Multiplier | Application | Result |
 |-------------|------------|-------------|--------|
-| Stop Loss   | ×2.5       | DeepSeek SL distance × 2.5 | Wider stop for volatility protection |
+| Stop Loss   | ×1.25      | DeepSeek SL distance × 1.25 | Moderate stop widening |
 | Take Profit | ×0.15      | DeepSeek TP distance × 0.15 | Quick profit taking |
-| Risk/Reward | 0.06       | 0.15 ÷ 2.5 | Ultra-conservative ratio |
+| Risk/Reward | 0.12       | 0.15 ÷ 1.25 | Conservative ratio |
 
 **Applied to both BTCUSD and XAUUSD equally**
 
@@ -378,13 +378,13 @@
    - **Fixed Values:** SL/TP set at entry and never changed
    - **Result:** Simpler position management, predictable risk
 
-8. **TP/SL Normalization Factors - NEW APPROACH:**
+8. **TP/SL Normalization Factors - UPDATED:**
    - **IMPLEMENTED:** Normalization factors for DeepSeek suggestions
-   - **Stop Loss:** DeepSeek distance × 2.5 (wider stops)
-   - **Take Profit:** DeepSeek distance × 0.15 (quick profits)
+   - **Stop Loss:** DeepSeek distance × 1.25 (moderate widening, was 2.5)
+   - **Take Profit:** DeepSeek distance × 0.15 (quick profits, unchanged)
    - **Applies to:** Both BTCUSD and XAUUSD equally
-   - **Risk/Reward:** Ultra-conservative 0.06 ratio
-   - **Result:** Consistent risk management across all trades
+   - **Risk/Reward:** Conservative 0.12 ratio (was 0.06)
+   - **Result:** Better balanced risk/reward with tighter stops
 
 9. **Trading Hours Restriction - IMPLEMENTED:**
    - **NEW:** Only trade during specific CET time windows

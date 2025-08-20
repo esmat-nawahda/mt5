@@ -743,7 +743,7 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
 
 def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None) -> tuple:
     """Adjust TP and SL based on configuration priority:
-    1. Normalization factors (2.5x for SL, 0.15x for TP) - HIGHEST PRIORITY
+    1. Normalization factors (1.25x for SL, 0.15x for TP) - HIGHEST PRIORITY
     2. Fixed pip values (fallback if normalization disabled)
     3. Support/resistance based calculation
     4. Factor-based calculation (legacy fallback)
@@ -765,7 +765,7 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
     # Check if we should use normalization factors (HIGHEST PRIORITY)
     if config.get('use_normalization', False):
         # Get normalization factors
-        sl_factor = config.get('sl_normalization_factor', 2.5)
+        sl_factor = config.get('sl_normalization_factor', 1.25)
         tp_factor = config.get('tp_normalization_factor', 0.15)
         
         # Calculate original distances from DeepSeek suggestion

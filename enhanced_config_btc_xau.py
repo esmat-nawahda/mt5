@@ -108,11 +108,11 @@ TP_SL_ADJUSTMENT_CONFIG = {
     'use_normalization': True,          # Use normalization factors for DeepSeek values
     'use_fixed_pips': False,            # Disabled - using normalization instead
     'use_support_resistance': False,    # Disabled - using normalization instead
-    'sl_normalization_factor': 2.5,     # SL = DeepSeek SL × 2.5 for both instruments
+    'sl_normalization_factor': 1.25,    # SL = DeepSeek SL × 1.25 for both instruments
     'tp_normalization_factor': 0.15,    # TP = DeepSeek TP × 0.15 for both instruments
     'sl_buffer_pips': 100,              # Not used when normalization enabled
     'tp_buffer_pips': 10,               # Not used when normalization enabled
-    'min_risk_reward_ratio': 0.06,      # Ultra-low RR (0.15/2.5 = 0.06)
+    'min_risk_reward_ratio': 0.12,      # Conservative RR (0.15/1.25 = 0.12)
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
