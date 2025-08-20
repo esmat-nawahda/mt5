@@ -105,13 +105,14 @@ RANGE_DETECTION_CONFIG = {
 # ================================================================
 
 TP_SL_ADJUSTMENT_CONFIG = {
-    'use_fixed_pips': True,             # Use fixed pip values for SL/TP
-    'use_support_resistance': False,     # Disabled - using fixed pips instead
-    'sl_buffer_pips': 100,              # Not used when fixed pips enabled
-    'tp_buffer_pips': 10,               # Not used when fixed pips enabled
-    'tp_reduction_factor': 0.18,         # Not used when fixed pips enabled
-    'sl_increase_factor': 3.0,           # Not used when fixed pips enabled
-    'min_risk_reward_ratio': 0.07,       # Ultra-low minimum RR for extreme scalping
+    'use_normalization': True,          # Use normalization factors for DeepSeek values
+    'use_fixed_pips': False,            # Disabled - using normalization instead
+    'use_support_resistance': False,    # Disabled - using normalization instead
+    'sl_normalization_factor': 2.5,     # SL = DeepSeek SL × 2.5 for both instruments
+    'tp_normalization_factor': 0.15,    # TP = DeepSeek TP × 0.15 for both instruments
+    'sl_buffer_pips': 100,              # Not used when normalization enabled
+    'tp_buffer_pips': 10,               # Not used when normalization enabled
+    'min_risk_reward_ratio': 0.06,      # Ultra-low RR (0.15/2.5 = 0.06)
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
@@ -272,6 +273,33 @@ SYSTEM_CONFIG = {
 }
 
 # ================================================================
+# ⏰ TRADING HOURS CONFIGURATION
+# ================================================================
+
+TRADING_HOURS_CONFIG = {
+    'enabled': True,  # Enable trading hours restriction
+    'timezone': 'CET',  # Central European Time
+    'trading_windows': [
+        {
+            'name': 'Morning Session',
+            'start': '08:00',  # 08:00 CET
+            'end': '12:00',    # 12:00 CET
+            'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        },
+        {
+            'name': 'Afternoon/Night Session',
+            'start': '13:00',  # 13:00 CET
+            'end': '03:00',    # 03:00 CET (next day)
+            'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        }
+    ],
+    'block_weekends': True,  # No trading on weekends
+    'check_holidays': False,  # Holiday calendar check (future enhancement)
+    'force_close_outside_hours': False,  # Don't close positions outside hours
+    'allow_position_management': True  # Allow SL/TP updates outside hours
+}
+
+# ================================================================
 # 📊 PROMPT CONFIGURATION FOR BTCUSD AND XAUUSD
 # ================================================================
 
@@ -344,6 +372,7 @@ COMPLETE_CONFIG = {
     'range_detection': RANGE_DETECTION_CONFIG,
     'tp_sl_adjustment': TP_SL_ADJUSTMENT_CONFIG,
     'risk_management': RISK_MANAGEMENT_CONFIG,
+    'trading_hours': TRADING_HOURS_CONFIG,
     'prompt_config': PROMPT_CONFIG,
     'security': SECURITY_CONFIG
 }

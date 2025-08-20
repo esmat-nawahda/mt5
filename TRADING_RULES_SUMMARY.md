@@ -7,18 +7,19 @@
 - **ONLY TRADE:** XAUUSD (Gold) and BTCUSD (Bitcoin)
 - **NO OTHER PAIRS ALLOWED**
 
-## ⚠️ CRITICAL RULE: FIXED PIP-BASED TP/SL
-**EVERY trade uses FIXED pip values from entry price:**
+## ⚠️ CRITICAL RULE: NORMALIZATION-BASED TP/SL
+**EVERY trade uses NORMALIZATION factors applied to DeepSeek suggestions:**
 
-**BTCUSD:**
-- **BUY:** SL at entry -300 pips, TP at entry +189 pips
-- **SELL:** SL at entry +300 pips, TP at entry -189 pips
+**Both BTCUSD and XAUUSD:**
+- **Stop Loss:** DeepSeek SL distance × 2.5
+- **Take Profit:** DeepSeek TP distance × 0.15
+- **Risk/Reward Ratio:** 0.06 (0.15/2.5)
 
-**XAUUSD:**
-- **BUY:** SL at entry -90 pips, TP at entry +30 pips
-- **SELL:** SL at entry +90 pips, TP at entry -30 pips
+**Example:**
+- DeepSeek suggests: SL 100 points away, TP 200 points away
+- Final values: SL = 100 × 2.5 = 250 points, TP = 200 × 0.15 = 30 points
 
-**DeepSeek values are IGNORED - only used to determine BUY/SELL direction**
+**Purpose:** Protects capital with wider stops while taking quick profits
 
 ---
 
@@ -53,17 +54,24 @@
 
 ## 🚫 BLOCKING CONDITIONS (ANY = NO TRADE)
 
-### 1. **NEWS FILTER**
+### 1. **TRADING HOURS FILTER** ⏰
+- ✅ **Morning Session:** 08:00-12:00 CET (Monday-Friday)
+- ✅ **Afternoon/Night Session:** 13:00-03:00 CET (Monday-Friday)
+- ❌ **Blocked:** 03:01-07:59 CET and 12:01-12:59 CET
+- ❌ **Weekends:** Saturday and Sunday completely blocked
+- ℹ️ **Position Management:** Existing positions can be managed outside hours
+
+### 2. **NEWS FILTER**
 - ❌ **Block Window:** 45 minutes before/after high-impact USD news
 - ❌ **News Types Blocked:** Red/High impact events only
 - ✅ **Clear to trade:** When outside news windows
 
-### 2. **POSITION LIMITS**
+### 3. **POSITION LIMITS**
 - ❌ **Max Concurrent Trades:** 2 (1 per instrument)
 - ❌ **Max Daily Trades:** 20 total
 - ❌ **Active Trades Check:** Skip analysis if already 2 positions open
 
-### 3. **SPREAD LIMITS**
+### 4. **SPREAD LIMITS**
 - ⚠️ **REMOVED FROM MAXPROTECT:** Spread no longer blocks trades
 - ℹ️ **Note:** Spread monitoring available but not enforced
 
@@ -81,13 +89,14 @@
 - ⚠️ **REMOVED:** No min/max lot restrictions
 - ✅ **Broker Limits Only:** Only broker's natural limits apply
 
-### 3. **TP/SL ADJUSTMENTS - FIXED PIP MODE 🎯**
-| Instrument | Direction | Stop Loss | Take Profit | Risk/Reward |
-|------------|-----------|-----------|-------------|-------------|
-| BTCUSD     | BUY       | Entry -300 pips | Entry +189 pips | 0.63 (189/300) |
-| BTCUSD     | SELL      | Entry +300 pips | Entry -189 pips | 0.63 (189/300) |
-| XAUUSD     | BUY       | Entry -90 pips  | Entry +30 pips  | 0.33 (30/90) |
-| XAUUSD     | SELL      | Entry +90 pips  | Entry -30 pips  | 0.33 (30/90) |
+### 3. **TP/SL ADJUSTMENTS - NORMALIZATION MODE 🎯**
+| Factor Type | Multiplier | Application | Result |
+|-------------|------------|-------------|--------|
+| Stop Loss   | ×2.5       | DeepSeek SL distance × 2.5 | Wider stop for volatility protection |
+| Take Profit | ×0.15      | DeepSeek TP distance × 0.15 | Quick profit taking |
+| Risk/Reward | 0.06       | 0.15 ÷ 2.5 | Ultra-conservative ratio |
+
+**Applied to both BTCUSD and XAUUSD equally**
 
 ### 4. **STOP LOSS MANAGEMENT**
 - ✅ **Automatic SL Placement:** If no SL exists, automatically places SL at breakeven when profit ≥ $50
@@ -318,7 +327,7 @@
 ---
 
 *Last Updated: 2025-08-19*
-*Protocol: Thanatos-Guardian-Prime v18.0-FIXED-PIPS*
+*Protocol: Thanatos-Guardian-Prime v19.0-NORMALIZATION*
 
 ---
 
@@ -368,3 +377,20 @@
    - **KEPT:** Position closure on signal reversal
    - **Fixed Values:** SL/TP set at entry and never changed
    - **Result:** Simpler position management, predictable risk
+
+8. **TP/SL Normalization Factors - NEW APPROACH:**
+   - **IMPLEMENTED:** Normalization factors for DeepSeek suggestions
+   - **Stop Loss:** DeepSeek distance × 2.5 (wider stops)
+   - **Take Profit:** DeepSeek distance × 0.15 (quick profits)
+   - **Applies to:** Both BTCUSD and XAUUSD equally
+   - **Risk/Reward:** Ultra-conservative 0.06 ratio
+   - **Result:** Consistent risk management across all trades
+
+9. **Trading Hours Restriction - IMPLEMENTED:**
+   - **NEW:** Only trade during specific CET time windows
+   - **Morning Session:** 08:00-12:00 CET (Monday-Friday)
+   - **Afternoon/Night Session:** 13:00-03:00 CET (Monday-Friday)
+   - **Blocked Hours:** 03:01-07:59 CET and 12:01-12:59 CET
+   - **Weekends:** Completely blocked (Saturday-Sunday)
+   - **Position Management:** Can still manage existing positions outside hours
+   - **Result:** Focused trading during optimal market hours

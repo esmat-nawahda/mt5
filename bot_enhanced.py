@@ -15,6 +15,7 @@ import requests, yaml
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+import pytz
 from dotenv import load_dotenv
 from news_filter import is_blocked_now, next_blocking_event
 from trading_logger import init_logger, log_trade, log_analysis_prompt
@@ -22,7 +23,7 @@ from colorful_logger import *
 from enhanced_config_btc_xau import (
     TRADING_INSTRUMENTS, INSTRUMENTS_CONFIG, NEWS_FILTERING_CONFIG,
     RANGE_DETECTION_CONFIG, TP_SL_ADJUSTMENT_CONFIG, RISK_MANAGEMENT_CONFIG,
-    SYSTEM_CONFIG, PROMPT_CONFIG, get_instrument_config,
+    SYSTEM_CONFIG, PROMPT_CONFIG, TRADING_HOURS_CONFIG, get_instrument_config,
     get_tp_sl_adjustment, is_instrument_allowed, validate_config
 )
 
@@ -48,6 +49,77 @@ MT5_LOGIN = SYSTEM_CONFIG['mt5_config']['login']
 MT5_PASSWORD = SYSTEM_CONFIG['mt5_config']['password']
 MT5_SERVER = SYSTEM_CONFIG['mt5_config']['server']
 MAGIC_NUMBER = SYSTEM_CONFIG['mt5_config']['magic_number']
+
+# ================================================================
+# Trading Hours Check Function
+# ================================================================
+
+def is_trading_hours_allowed():
+    """Check if current time is within allowed trading hours
+    
+    Trading windows:
+    - Morning: 08:00-12:00 CET
+    - Afternoon/Night: 13:00-03:00 CET (next day)
+    
+    Returns:
+        tuple: (bool: allowed, str: reason)
+    """
+    config = TRADING_HOURS_CONFIG
+    
+    # Check if trading hours restriction is enabled
+    if not config.get('enabled', False):
+        return True, "Trading hours check disabled"
+    
+    # Get current time in CET
+    try:
+        cet_tz = pytz.timezone('CET')
+        current_time = datetime.now(cet_tz)
+    except:
+        # Fallback to system time if timezone fails
+        current_time = datetime.now()
+        cet_tz = None
+    
+    current_day = current_time.strftime('%A')
+    current_hour = current_time.hour
+    current_minute = current_time.minute
+    current_time_str = f"{current_hour:02d}:{current_minute:02d}"
+    
+    # Check if it's weekend
+    if config.get('block_weekends', True) and current_day in ['Saturday', 'Sunday']:
+        return False, f"Weekend trading blocked ({current_day})"
+    
+    # Check each trading window
+    for window in config.get('trading_windows', []):
+        # Check if current day is in allowed days
+        if current_day not in window.get('days', []):
+            continue
+        
+        start_time = window.get('start', '00:00')
+        end_time = window.get('end', '23:59')
+        window_name = window.get('name', 'Trading Window')
+        
+        # Parse start and end times
+        start_hour, start_min = map(int, start_time.split(':'))
+        end_hour, end_min = map(int, end_time.split(':'))
+        
+        # Handle overnight sessions (e.g., 13:00-03:00)
+        if end_hour < start_hour:
+            # Session spans midnight
+            if current_hour >= start_hour or current_hour < end_hour:
+                return True, f"Within {window_name} ({start_time}-{end_time} CET)"
+            elif current_hour == end_hour and current_minute <= end_min:
+                return True, f"Within {window_name} ({start_time}-{end_time} CET)"
+        else:
+            # Normal session within same day
+            current_minutes = current_hour * 60 + current_minute
+            start_minutes = start_hour * 60 + start_min
+            end_minutes = end_hour * 60 + end_min
+            
+            if start_minutes <= current_minutes <= end_minutes:
+                return True, f"Within {window_name} ({start_time}-{end_time} CET)"
+    
+    # No valid trading window found
+    return False, f"Outside trading hours (Current: {current_time_str} CET)"
 
 cycle_count = 0
 # Track positions with SL moved to breakeven (eligible for trailing)
@@ -670,12 +742,11 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
     return round(final_lot_size, 1)
 
 def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None) -> tuple:
-    """Adjust TP and SL based on fixed pip values
-    
-    BTCUSD BUY: SL at entry -300 pips, TP at entry +189 pips
-    BTCUSD SELL: SL at entry +300 pips, TP at entry -189 pips
-    XAUUSD BUY: SL at entry -90 pips, TP at entry +30 pips
-    XAUUSD SELL: SL at entry +90 pips, TP at entry -30 pips
+    """Adjust TP and SL based on configuration priority:
+    1. Normalization factors (2.5x for SL, 0.15x for TP) - HIGHEST PRIORITY
+    2. Fixed pip values (fallback if normalization disabled)
+    3. Support/resistance based calculation
+    4. Factor-based calculation (legacy fallback)
     """
     config = TP_SL_ADJUSTMENT_CONFIG
     adjustments = get_tp_sl_adjustment(symbol)
@@ -691,8 +762,46 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
     else:
         pip_value = 0.0001  # Standard forex pip
     
-    # Check if we should use fixed pip values (highest priority)
-    if config.get('use_fixed_pips', False):
+    # Check if we should use normalization factors (HIGHEST PRIORITY)
+    if config.get('use_normalization', False):
+        # Get normalization factors
+        sl_factor = config.get('sl_normalization_factor', 2.5)
+        tp_factor = config.get('tp_normalization_factor', 0.15)
+        
+        # Calculate original distances from DeepSeek suggestion
+        sl_distance = abs(entry - sl)
+        tp_distance = abs(tp - entry)
+        
+        # Apply normalization factors
+        normalized_sl_distance = sl_distance * sl_factor
+        normalized_tp_distance = tp_distance * tp_factor
+        
+        # Determine if BUY or SELL based on original SL position
+        is_buy = sl < entry
+        
+        if is_buy:
+            # BUY position
+            final_sl = entry - normalized_sl_distance
+            final_tp = entry + normalized_tp_distance
+            print_info(f"  [NORMALIZATION] {symbol} BUY: DeepSeek SL distance={sl_distance:.2f} x {sl_factor} = {normalized_sl_distance:.2f}")
+            print_info(f"  [NORMALIZATION] {symbol} BUY: DeepSeek TP distance={tp_distance:.2f} x {tp_factor} = {normalized_tp_distance:.2f}")
+            print_info(f"  [NORMALIZATION] Final SL={final_sl:.5f}, Final TP={final_tp:.5f}")
+        else:
+            # SELL position
+            final_sl = entry + normalized_sl_distance
+            final_tp = entry - normalized_tp_distance
+            print_info(f"  [NORMALIZATION] {symbol} SELL: DeepSeek SL distance={sl_distance:.2f} x {sl_factor} = {normalized_sl_distance:.2f}")
+            print_info(f"  [NORMALIZATION] {symbol} SELL: DeepSeek TP distance={tp_distance:.2f} x {tp_factor} = {normalized_tp_distance:.2f}")
+            print_info(f"  [NORMALIZATION] Final SL={final_sl:.5f}, Final TP={final_tp:.5f}")
+        
+        # Calculate Risk/Reward ratio for logging
+        rr_ratio = normalized_tp_distance / normalized_sl_distance
+        print_info(f"  [NORMALIZATION] Risk/Reward Ratio: {rr_ratio:.3f} (TP/SL = {normalized_tp_distance:.2f}/{normalized_sl_distance:.2f})")
+        
+        return final_sl, final_tp
+    
+    # Check if we should use fixed pip values (second priority)
+    elif config.get('use_fixed_pips', False):
         # Determine if BUY or SELL based on original SL position
         is_buy = sl < entry
         
@@ -1297,6 +1406,13 @@ def cycle_once():
     
     print_cycle_start(cycle_count)
     
+    # Check and display trading hours status
+    hours_allowed, hours_reason = is_trading_hours_allowed()
+    if hours_allowed:
+        print_info(f"[TRADING HOURS] {Colors.GREEN}ACTIVE{Colors.RESET} - {hours_reason}")
+    else:
+        print_warning(f"[TRADING HOURS] {Colors.RED}BLOCKED{Colors.RESET} - {hours_reason}")
+    
     # Update pre-calculation cache for speed optimization
     update_precalc_cache()
     
@@ -1505,6 +1621,13 @@ def cycle_once():
         if symbol in blocked_pairs:
             print_trade_decision(symbol, "BLOCKED", blocked_pairs[symbol])
             log_trade(decision_id, symbol, action, confidence, "", "", "", status="BLOCKED", reason=blocked_pairs[symbol])
+            continue
+        
+        # Check trading hours
+        hours_allowed, hours_reason = is_trading_hours_allowed()
+        if not hours_allowed:
+            print_trade_decision(symbol, "BLOCKED", f"Trading hours restriction: {hours_reason}")
+            log_trade(decision_id, symbol, action, confidence, "", "", "", status="BLOCKED", reason=f"Hours: {hours_reason}")
             continue
         
         # Check if position already open (already managed by auto-refresh)
