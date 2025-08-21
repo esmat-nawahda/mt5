@@ -108,20 +108,20 @@ TP_SL_ADJUSTMENT_CONFIG = {
     'use_normalization': True,          # Use normalization factors for DeepSeek values
     'use_fixed_pips': False,            # Disabled - using normalization instead
     'use_support_resistance': False,    # Disabled - using normalization instead
-    'sl_normalization_factor': 1.10,    # Default SL factor (fallback)
-    'tp_normalization_factor': 0.15,    # TP = DeepSeek TP × 0.15 for both instruments
+    'sl_normalization_factor': 1.15,    # Default SL factor (fallback) × 1.15
+    'tp_normalization_factor': 0.18,    # TP = DeepSeek TP × 0.18 for both instruments
     'sl_buffer_pips': 100,              # Not used when normalization enabled
     'tp_buffer_pips': 10,               # Not used when normalization enabled
-    'min_risk_reward_ratio': 0.14,      # Avg RR ((0.15/1.15 + 0.15/1.05) / 2)
+    'min_risk_reward_ratio': 0.157,     # Avg RR (0.18/1.15 = 0.157)
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
             # Normalization factors for Gold
-            'sl_normalization_factor': 1.05,  # Gold: SL = DeepSeek × 1.05
-            'tp_normalization_factor': 0.15,  # Gold: TP = DeepSeek × 0.15
-            'min_risk_reward_ratio': 0.14,    # Gold: 0.15/1.05 = 0.14 RR ratio
+            'sl_normalization_factor': 1.15,   # Gold: SL = DeepSeek × 1.15
+            'tp_normalization_factor': 0.18,   # Gold: TP = DeepSeek × 0.18
+            'min_risk_reward_ratio': 0.157,    # Gold: 0.18/1.15 = 0.157 RR ratio
             # Fixed pip values for Gold (fallback - not used when normalization enabled)
             'fixed_sl_pips_buy': 90,      # Gold BUY: SL at entry - 90 pips
             'fixed_tp_pips_buy': 30,      # Gold BUY: TP at entry + 30 pips
@@ -136,9 +136,9 @@ TP_SL_ADJUSTMENT_CONFIG = {
         },
         'BTCUSD': {
             # Normalization factors for Bitcoin
-            'sl_normalization_factor': 1.15,  # Bitcoin: SL = DeepSeek × 1.15
-            'tp_normalization_factor': 0.15,  # Bitcoin: TP = DeepSeek × 0.15
-            'min_risk_reward_ratio': 0.13,    # Bitcoin: 0.15/1.15 = 0.13 RR ratio
+            'sl_normalization_factor': 1.15,   # Bitcoin: SL = DeepSeek × 1.15
+            'tp_normalization_factor': 0.18,   # Bitcoin: TP = DeepSeek × 0.18
+            'min_risk_reward_ratio': 0.157,    # Bitcoin: 0.18/1.15 = 0.157 RR ratio
             # Fixed pip values for Bitcoin (fallback - not used when normalization enabled)
             'fixed_sl_pips_buy': 300,     # BTC BUY: SL at entry - 300 pips
             'fixed_tp_pips_buy': 189,     # BTC BUY: TP at entry + 189 pips
