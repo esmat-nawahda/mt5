@@ -8,23 +8,23 @@ The trading bot now uses **ATR-ADJUSTED** Stop Loss (SL) and Take Profit (TP) va
 ### BTCUSD (Bitcoin)
 - **BUY Position:**
   - SL = Entry Price - max(40 pips, 1×ATR)
-  - TP = Entry Price + max(65 pips, 1.5×ATR)
+  - TP = Entry Price + max(65 pips, 1.3×ATR)
   - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:1.62 with low volatility)
 
 - **SELL Position:**
   - SL = Entry Price + max(40 pips, 1×ATR)
-  - TP = Entry Price - max(65 pips, 1.5×ATR)
+  - TP = Entry Price - max(65 pips, 1.3×ATR)
   - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:1.62 with low volatility)
 
 ### XAUUSD (Gold)
 - **BUY Position:**
   - SL = Entry Price - max(70 pips, 1×ATR) 
-  - TP = Entry Price + max(140 pips, 1.5×ATR)
+  - TP = Entry Price + max(140 pips, 1.3×ATR)
   - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:2.0 with low volatility)
 
 - **SELL Position:**
   - SL = Entry Price + max(70 pips, 1×ATR)
-  - TP = Entry Price - max(140 pips, 1.5×ATR)
+  - TP = Entry Price - max(140 pips, 1.3×ATR)
   - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:2.0 with low volatility)
 
 ## Implementation Details
@@ -66,7 +66,7 @@ The trading bot now uses **ATR-ADJUSTED** Stop Loss (SL) and Take Profit (TP) va
 2. **Minimum Values**: Each instrument has minimum SL/TP distances that act as a floor
 3. **Maximum Function**: The bot takes the MAXIMUM between:
    - The minimum fixed pip value
-   - The ATR-based calculation (1×ATR for SL, 1.5×ATR for TP)
+   - The ATR-based calculation (1×ATR for SL, 1.3×ATR for TP)
 4. **Dynamic Adaptation**: 
    - In low volatility: Uses minimum fixed values for protection
    - In high volatility: Uses larger ATR-based values for wider stops
@@ -84,7 +84,7 @@ This test script validates the ATR-adjusted calculations with various volatility
 
 - **Adaptive to Volatility**: Automatically widens stops in volatile markets
 - **Protected Minimums**: Never goes below minimum safety thresholds
-- **Excellent Risk/Reward**: Maintains minimum 1:1.5 ratio, often better
+- **Excellent Risk/Reward**: Maintains minimum 1:1.3 ratio, up to 1:2.0 in low volatility
 - **ATR Source**: Uses H1 timeframe ATR(14) for consistency
 - **Volatility Thresholds**:
   - BTCUSD: ATR < 40 uses fixed minimums

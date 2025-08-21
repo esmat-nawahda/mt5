@@ -43,7 +43,7 @@ LLM_KEY = SYSTEM_CONFIG['deepseek_config']['api_key']
 MIN_RECHECK = int(os.getenv("MIN_RECHECK_MINUTES", "1"))
 MAX_RECHECK = int(os.getenv("MAX_RECHECK_MINUTES", "2"))
 DEVIATION = SYSTEM_CONFIG['mt5_config']['slippage']
-MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "70"))
+MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "78"))
 
 MT5_LOGIN = SYSTEM_CONFIG['mt5_config']['login']
 MT5_PASSWORD = SYSTEM_CONFIG['mt5_config']['password']
@@ -744,11 +744,11 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
 def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None, atr: float = None) -> tuple:
     """Adjust TP and SL based on ATR-ADJUSTED RULES:
     BTCUSD:
-        BUY: SL = Entry - max(40 pips, 1×ATR), TP = Entry + max(65 pips, 1.5×ATR)
-        SELL: SL = Entry + max(40 pips, 1×ATR), TP = Entry - max(65 pips, 1.5×ATR)
+        BUY: SL = Entry - max(40 pips, 1×ATR), TP = Entry + max(65 pips, 1.3×ATR)
+        SELL: SL = Entry + max(40 pips, 1×ATR), TP = Entry - max(65 pips, 1.3×ATR)
     XAUUSD:
-        BUY: SL = Entry - max(70 pips, 1×ATR), TP = Entry + max(140 pips, 1.5×ATR)
-        SELL: SL = Entry + max(70 pips, 1×ATR), TP = Entry - max(140 pips, 1.5×ATR)
+        BUY: SL = Entry - max(70 pips, 1×ATR), TP = Entry + max(140 pips, 1.3×ATR)
+        SELL: SL = Entry + max(70 pips, 1×ATR), TP = Entry - max(140 pips, 1.3×ATR)
     """
     
     # Determine if BUY or SELL based on original SL position from DeepSeek
@@ -767,7 +767,7 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
         
         # Calculate ATR-based values
         atr_sl = 1.0 * atr  # 1×ATR
-        atr_tp = 1.5 * atr  # 1.5×ATR
+        atr_tp = 1.3 * atr  # 1.3×ATR
         
         # Minimum fixed values in price units
         min_sl_pips = 40
@@ -782,7 +782,7 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
             final_sl = entry - sl_distance
             final_tp = entry + tp_distance
             print_info(f"  [ATR-ADJUSTED] {symbol} BUY:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
             print_info(f"    SL distance: max(40, {atr_sl:.2f}) = {sl_distance:.2f}")
             print_info(f"    TP distance: max(65, {atr_tp:.2f}) = {tp_distance:.2f}")
             print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
@@ -791,7 +791,7 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
             final_sl = entry + sl_distance
             final_tp = entry - tp_distance
             print_info(f"  [ATR-ADJUSTED] {symbol} SELL:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
             print_info(f"    SL distance: max(40, {atr_sl:.2f}) = {sl_distance:.2f}")
             print_info(f"    TP distance: max(65, {atr_tp:.2f}) = {tp_distance:.2f}")
             print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
@@ -806,7 +806,7 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
         
         # Calculate ATR-based values
         atr_sl = 1.0 * atr  # 1×ATR
-        atr_tp = 1.5 * atr  # 1.5×ATR
+        atr_tp = 1.3 * atr  # 1.3×ATR
         
         # Minimum fixed values in price units
         min_sl_pips = 70
@@ -821,7 +821,7 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
             final_sl = entry - sl_distance
             final_tp = entry + tp_distance
             print_info(f"  [ATR-ADJUSTED] {symbol} BUY:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
             print_info(f"    SL distance: max({min_sl_pips*pip_value:.2f}, {atr_sl:.2f}) = {sl_distance:.2f}")
             print_info(f"    TP distance: max({min_tp_pips*pip_value:.2f}, {atr_tp:.2f}) = {tp_distance:.2f}")
             print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
@@ -830,7 +830,7 @@ def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resist
             final_sl = entry + sl_distance
             final_tp = entry - tp_distance
             print_info(f"  [ATR-ADJUSTED] {symbol} SELL:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
             print_info(f"    SL distance: max({min_sl_pips*pip_value:.2f}, {atr_sl:.2f}) = {sl_distance:.2f}")
             print_info(f"    TP distance: max({min_tp_pips*pip_value:.2f}, {atr_tp:.2f}) = {tp_distance:.2f}")
             print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
@@ -1150,108 +1150,165 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     instrument_type = instrument_config.get('type', 'unknown')
     volatility_profile = instrument_config.get('volatility', 'medium')
     
-    # Build the enhanced prompt with new template
-    prompt = f"""=== CURRENT MARKET DATA ===
+    # Build the enhanced prompt with complete v16.0-MAXPROTECT template
+    prompt = f"""meta:
+  version: "16.0-MAXPROTECT"
+  codename: "Thanatos-Guardian-Prime"
+  input_requirements: "✅ VALID (H1/M15/M5 with 30+ candles, current time {technical_data['timestamp_cet']} CET)"
+  response_rules: "STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED | SINGLE_DECISION"
+  min_confidence_threshold: "78%"
+  adaptive_weighting: "Session-based confidence adjustment active"
+
+=== CURRENT MARKET DATA ===
 SYMBOL: {symbol}
 INSTRUMENT TYPE: {instrument_type.upper()}
-VOLATILITY PROFILE: {volatility_profile.upper()}
 TIME: {technical_data['timestamp_cet']} CET
-SESSION: {technical_data['sessions']['active']} ({session_weight:+d}% confidence boost)
+SESSION: {technical_data['sessions']['active']} 
 CURRENT PRICE: {technical_data['price']}
+ACTIVE TRADES: {len(open_positions_map())}
+EQUITY: ${account_info.equity:.2f}
+NEWS WINDOW: {'🔴 BLOCKED' if red_news_window else '✅ CLEAR'}
 
 === TECHNICAL INDICATORS ===
-ADX H1: {technical_data['measures']['adx14_h1']}
-ATR H1: {technical_data['measures']['atr_h1_points']} points ({technical_data['measures']['atr_h1_pct']:.2f}%)
-BB Width H1: {technical_data['measures']['bb20_width_pct_h1']:.2f}%
-Range High H1: {technical_data['measures']['range_high_h1']}
-Range Low H1: {technical_data['measures']['range_low_h1']}
-Inside Lookback H1: {technical_data['measures']['inside_lookback_h1']} candles
+H1_ATR(14): {technical_data['measures']['atr_h1_points']} points ({technical_data['measures']['atr_h1_pct']:.2f}%)
+ADX(14): {technical_data['measures']['adx14_h1']}
+BB_WIDTH_H1: {technical_data['measures']['bb20_width_pct_h1']:.2f}%
+RANGE_HIGH_H1: {technical_data['measures']['range_high_h1']}
+RANGE_LOW_H1: {technical_data['measures']['range_low_h1']}
+CONSOLIDATION_CANDLES: {technical_data['measures']['inside_lookback_h1']}
+CURRENT_VOLUME: {technical_data['measures'].get('current_volume', 0)}
 
-=== MULTI-TIMEFRAME STRUCTURE ===
-H1 TREND: {technical_data['mtf_state']['H1_trend']}
-M15 TREND: {technical_data['mtf_state']['M15_trend']}
-M5 SETUP: {technical_data['mtf_state']['M5_setup']}
-VOLUME OK: {technical_data['mtf_state']['volume_ok']}
-OBV AGREES: {technical_data['mtf_state']['obv_agrees']}
-
-=== RISK & SAFETY ===
-Active Trades: {len(open_positions_map())}
-Equity: ${account_info.equity:.2f}
-News Window: {'🔴 BLOCKED' if red_news_window else '✅ CLEAR'}
+=== MULTI-TIMEFRAME ANALYSIS ===
+H1_TREND: {technical_data['mtf_state']['H1_trend']}
+M15_TREND: {technical_data['mtf_state']['M15_trend']}
+M5_SETUP: {technical_data['mtf_state']['M5_setup']}
+VOLUME_ABOVE_MA50: {technical_data['mtf_state']['volume_ok']}
+OBV_AGREES: {technical_data['mtf_state']['obv_agrees']}
 
 {get_instrument_specific_instructions(symbol)}
 
-=== INSTRUCTIONS ===
-Analyze this data using Thanatos-Guardian-Prime v15.2-MAXPROTECT protocol.
-Apply adaptive session weight: {session_weight:+d}% for {technical_data['sessions']['active']}.
-Respect minimum confidence threshold: 70%.
-TRIPLE VALIDATION REQUIRED.
-MaxProtect: ACTIVE but TOLERANT - Allows 1 timeframe conflict, requires H1/M15 alignment only.
+=== PROTOCOL v16.0-MAXPROTECT ===
 
-IMPORTANT: Confidence must reflect instrument-specific characteristics:
-- XAUUSD (Gold): More conservative, requires stronger confluence (typically 70-85% range)
-- BTCUSD (Bitcoin): Can be more aggressive on momentum (can reach 85-95% on strong setups)
-- Each instrument should have DIFFERENT confidence based on their unique market conditions
-- DO NOT give similar confidence to both instruments unless conditions truly warrant it
+REGIME DETECTION (AUTO-SELECT based on current data):
+- DYNAMIC: If H1.ATR >= 1.30 × average OR 1h move% >= 1.5%
+  * Ultra-strict risk mode
+  * SL multiplier: 0.8 | TP multiplier: 0.8
+  * TP1 rapide (1.2R) puis runner avec trailing
+  * Limiter à A/B setups uniquement
 
-RESPOND ONLY IN STRICT YAML FORMAT:
+- NORMAL: If 0.9 × average <= H1.ATR < 1.30 × average  
+  * Standard risk mode
+  * SL multiplier: 1.0 | TP multiplier: 1.0
+  * TP1 à ~2R, TP2 ~3-4R, laisser runner si momentum
+  * Setups réguliers mais filtrés
 
-visual_signal:
-  triple_check_status: "✅ VALIDATED 3×" or "⛔️ NOT VALIDATED"
-  action: "BUY" or "SELL" or "NO_TRADE"
-  confidence:
-    value: <float 0-100>
-    level: "😊" if >=90 | "😃" if 85-89 | "🙂" if 70-84 | "⛔" if <70
-    breakdown:
-      quantum: <float 0-100>
-      tactical: <float 0-100>
-      psychological: <float 0-100>
-    adaptive_note: "Session {technical_data['sessions']['active']} ({session_weight:+d}% confidence)"
-  alerts: <list of alerts>
+- QUIET: If H1.ATR < 0.9 × average OR persistent small candles
+  * Conservative risk mode
+  * SL multiplier: 1.2 | TP multiplier: 0.7
+  * Prendre profits rapidement (scalps)
+  * Priorité au NO TRADE sauf breakout confirmé
 
-execution_plan:
-  entry: <float>
-  sl: <float>
-  tp1: <float>
-  tp2: <float>
-  tp3: <float>
-  rr_ratios:
-    tp1_rr: <float>
-    tp2_rr: <float>
-    tp3_rr: <float>
-  time_projection: <string>
+If contradictory signals → default to QUIET
 
-guardian_filters:
-  mandatory_confluence:
-    session_ok: <true/false with description>
-    structure_ok: <true/false with description>
-    flow_ok: <true/false with description>
-  hard_safety: <string status>
-  soft_safety: <list of checks>
+SESSION WEIGHTS:
+- London Open (08:00-10:00 CET): +2% confidence
+- NY Open (14:30-16:30 CET): +3% confidence  
+- Asia Quiet (22:00-02:00 CET): -2% confidence
+- Lunch Lull (12:00-13:30 CET): -1% confidence
+Current session: {technical_data['sessions']['active']} ({session_weight:+d}%)
 
-max_protect_rule:
-  description: "If >=2 trends conflict between H1/M15/M5 -> FORCE NO_TRADE"
-  status: <string>
+MAXPROTECT RULE:
+- If ≥2 timeframe contradictions (H1/M15/M5) → FORCE NO_TRADE
+- Check MA stack, Market Structure Shift, OBV divergence
+- Status: AUTO-DETECT from data
 
-pair_profile:
-  current_status: <string>
-  kill_zones: <string>
+FLAT RANGE GUARD:
+- Range flat if width < 0.6 × H1.ATR AND >60% H1 candles overlap
+- Action: NO TRADE unless breakout confirmed M15 + volume > MA50
 
-optimization_data:
-  potential_setup: <string>
-  key_levels:
-    support: <float>
-    resistance: <float>
-  volume_trigger: <string>
+GUARDIAN FILTERS:
+- Session must be outside kill zones
+- Structure alignment H1/M15/M5 required
+- OBV & Volume must agree with direction
+- No trade within 5 min of red news
+- Spread must be acceptable (XAU<35pts, BTC<60pts)
 
-analysis: <string explaining the decision>
-"""
+MINIMUM CONFIDENCE: 78% (else NO_TRADE)
+TRIPLE VALIDATION REQUIRED
+
+RESPOND IN THIS EXACT FORMAT:
+
+# 📊 EXECUTION PLAN
+regime: "DYNAMIC" or "NORMAL" or "QUIET"
+decision: "BUY" or "SELL" or "NO_TRADE"
+confidence:
+  value: <float 78-100>
+  level: "💎" if >=90 | "😃" if 85-89 | "🙂" if 78-84 | "⛔" if <78
+  breakdown:
+    trend_quality: <float>
+    trigger_quality: <float>
+    volatility_fit: <float>
+  session_weight: "{technical_data['sessions']['active']} ({session_weight:+d}%)"
+triple_check: "✅ VALIDATED 3×" or "⛔️ NOT VALIDATED"
+
+entry: <float>
+sl: <float>
+tp1: <float>
+tp2: <float>
+tp3: <float>
+rr_ratios:
+  tp1_rr: <float>
+  tp2_rr: <float>
+  tp3_rr: <float>
+time_projection: <string>
+
+# CONTEXT
+maxprotect:
+  status: "PASS" or "FAIL"
+  contradictions: <number>
+  details: <string>
+
+flat_range_guard:
+  status: "ACTIVE" or "INACTIVE"
+  range_width_ratio: <float>
+  
+confluence:
+  session_ok: <bool>
+  structure_ok: <bool>
+  flow_ok: <bool>
+
+# REGIME METRICS
+regime_metrics:
+  h1_atr: {technical_data['measures']['atr_h1_points']}
+  atr_vs_average: <float>
+  move_1h_pct: <float>
+  volume_flag: <string>
+
+# PLAYBOOK
+risk_mode: "Ultra-strict" or "Standard" or "Conservative"
+sl_multiplier: <float>
+tp_multiplier: <float>
+confirmations_used: <list>
+partials_note: <string>
+
+# LEVELS
+key_levels:
+  support: <float>
+  resistance: <float>
+  
+alerts: <list>
+analysis: <string explaining decision>
+
+# DIAGNOSTICS
+spread_check: <string>
+news_window_check: <string>
+overlap_ratio: <float>"""
     
     payload = {
         "model": LLM_MODEL,
         "temperature": 0.1,
         "messages": [
-            {"role": "system", "content": "You are Thanatos-Guardian-Prime trading AI. Follow all protocol rules strictly. Return ONLY valid YAML."},
+            {"role": "system", "content": "You are Thanatos-Guardian-Prime v16.0-MAXPROTECT trading AI. Apply regime detection (DYNAMIC/NORMAL/QUIET), enforce 78% minimum confidence, apply session weights, and return ONLY valid YAML. Ne produire qu'une sortie finale. Si doute sur le régime, choisir le plus conservateur (QUIET > NORMAL > DYNAMIC)."},
             {"role": "user", "content": prompt}
         ]
     }
@@ -1307,8 +1364,54 @@ analysis: <string explaining the decision>
     try:
         parsed = yaml.safe_load(content)
         
-        # Convert new format to expected format
-        if 'visual_signal' in parsed:
+        # Handle v16.0 format with regime detection
+        if 'regime' in parsed or 'decision' in parsed:
+            # Extract data from v16.0 format
+            confidence_data = parsed.get('confidence', {})
+            confidence_value = confidence_data.get('value', 0)
+            
+            # Build response in expected format
+            converted_response = {
+                "action": parsed.get('decision', 'NO_TRADE'),
+                "confidence": float(confidence_value) if confidence_value else 0,
+                "confidence_breakdown": confidence_data.get('breakdown', {}),
+                "entry": parsed.get('entry'),
+                "sl": parsed.get('sl'),
+                "tp1": parsed.get('tp1'),
+                "tp2": parsed.get('tp2'),
+                "tp3": parsed.get('tp3'),
+                "rr_ratios": parsed.get('rr_ratios', {}),
+                "time_projection": parsed.get('time_projection', ''),
+                "analysis": parsed.get('analysis', ''),
+                "regime": parsed.get('regime', 'NORMAL'),
+                "guardian_status": {
+                    "anti_range_pass": parsed.get('flat_range_guard', {}).get('status') != 'ACTIVE',
+                    "confluence_pass": parsed.get('confluence', {}).get('structure_ok', False),
+                    "max_protect_pass": parsed.get('maxprotect', {}).get('status') == 'PASS',
+                    "session_ok": parsed.get('confluence', {}).get('session_ok', False),
+                    "structure_ok": parsed.get('confluence', {}).get('structure_ok', False),
+                    "flow_ok": parsed.get('confluence', {}).get('flow_ok', False)
+                },
+                "alerts": parsed.get('alerts', []),
+                "key_levels": parsed.get('key_levels', {}),
+                "risk_mode": parsed.get('risk_mode', 'Standard'),
+                "triple_check": parsed.get('triple_check', '⛔️ NOT VALIDATED'),
+                "sl_multiplier": parsed.get('sl_multiplier', 1.0),
+                "tp_multiplier": parsed.get('tp_multiplier', 1.0),
+                "partials_note": parsed.get('partials_note', ''),
+                "diagnostics": {
+                    "spread_check": parsed.get('spread_check', ''),
+                    "news_window_check": parsed.get('news_window_check', ''),
+                    "overlap_ratio": parsed.get('overlap_ratio', 0)
+                }
+            }
+            
+            # Log the prompt and analysis
+            log_analysis_prompt(symbol, prompt, checked_rules, parsed)
+            
+            return converted_response
+        # Handle old format (backward compatibility)
+        elif 'visual_signal' in parsed:
             # Extract data from new format
             visual_signal = parsed.get('visual_signal', {})
             execution_plan = parsed.get('execution_plan', {})

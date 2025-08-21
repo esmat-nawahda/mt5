@@ -110,7 +110,7 @@ TP_SL_ADJUSTMENT_CONFIG = {
     'use_fixed_pips': False,            # Disabled - using ATR rules
     'use_support_resistance': False,    # Disabled - using ATR rules
     'atr_sl_multiplier': 1.0,          # SL = max(min_pips, 1×ATR)
-    'atr_tp_multiplier': 1.5,          # TP = max(min_pips, 1.5×ATR)
+    'atr_tp_multiplier': 1.3,          # TP = max(min_pips, 1.3×ATR)
     'sl_buffer_pips': 100,              # Not used when ATR enabled
     'tp_buffer_pips': 10,               # Not used when ATR enabled
     'min_risk_reward_ratio': 1.5,       # Minimum R:R ratio expected
@@ -121,7 +121,7 @@ TP_SL_ADJUSTMENT_CONFIG = {
         'XAUUSD': {
             # ATR-based adjustment for Gold
             'atr_sl_multiplier': 1.0,          # SL = max(70 pips, 1×ATR)
-            'atr_tp_multiplier': 1.5,          # TP = max(140 pips, 1.5×ATR)
+            'atr_tp_multiplier': 1.3,          # TP = max(140 pips, 1.3×ATR)
             'min_risk_reward_ratio': 1.5,      # Expected minimum R:R
             # Minimum fixed pip values for Gold (used with ATR)
             'min_sl_pips': 70,             # Minimum SL distance: 70 pips
@@ -141,7 +141,7 @@ TP_SL_ADJUSTMENT_CONFIG = {
         'BTCUSD': {
             # ATR-based adjustment for Bitcoin
             'atr_sl_multiplier': 1.0,          # SL = max(40 pips, 1×ATR)
-            'atr_tp_multiplier': 1.5,          # TP = max(65 pips, 1.5×ATR)
+            'atr_tp_multiplier': 1.3,          # TP = max(65 pips, 1.3×ATR)
             'min_risk_reward_ratio': 1.5,      # Expected minimum R:R
             # Minimum fixed pip values for Bitcoin (used with ATR)
             'min_sl_pips': 40,             # Minimum SL distance: 40 pips

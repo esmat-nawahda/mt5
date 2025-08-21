@@ -20,7 +20,7 @@ def test_atr_adjusted_calculations():
             "entry": 100000.00,
             "atr": 30.0,  # Low ATR (less than minimum)
             "expected_sl_distance": 40.0,  # max(40, 30) = 40
-            "expected_tp_distance": 65.0,  # max(65, 45) = 65
+            "expected_tp_distance": 65.0,  # max(65, 39) = 65
         },
         # BTCUSD with high ATR (should use ATR values)
         {
@@ -29,7 +29,7 @@ def test_atr_adjusted_calculations():
             "entry": 100000.00,
             "atr": 100.0,  # High ATR
             "expected_sl_distance": 100.0,  # max(40, 100) = 100
-            "expected_tp_distance": 150.0,  # max(65, 150) = 150
+            "expected_tp_distance": 130.0,  # max(65, 130) = 130
         },
         # BTCUSD SELL with medium ATR
         {
@@ -38,7 +38,7 @@ def test_atr_adjusted_calculations():
             "entry": 100000.00,
             "atr": 50.0,  # Medium ATR
             "expected_sl_distance": 50.0,   # max(40, 50) = 50
-            "expected_tp_distance": 75.0,   # max(65, 75) = 75
+            "expected_tp_distance": 65.0,   # max(65, 65) = 65
         },
         # XAUUSD with low ATR (should use minimum fixed values)
         {
@@ -47,7 +47,7 @@ def test_atr_adjusted_calculations():
             "entry": 2650.00,
             "atr": 0.50,  # Low ATR (less than 0.70 minimum)
             "expected_sl_distance": 0.70,   # max(0.70, 0.50) = 0.70
-            "expected_tp_distance": 1.40,   # max(1.40, 0.75) = 1.40
+            "expected_tp_distance": 1.40,   # max(1.40, 0.65) = 1.40
         },
         # XAUUSD with high ATR (should use ATR values)
         {
@@ -56,7 +56,7 @@ def test_atr_adjusted_calculations():
             "entry": 2650.00,
             "atr": 2.00,  # High ATR
             "expected_sl_distance": 2.00,   # max(0.70, 2.00) = 2.00
-            "expected_tp_distance": 3.00,   # max(1.40, 3.00) = 3.00
+            "expected_tp_distance": 2.60,   # max(1.40, 2.60) = 2.60
         },
         # XAUUSD SELL with exact minimum ATR
         {
@@ -65,7 +65,7 @@ def test_atr_adjusted_calculations():
             "entry": 2650.00,
             "atr": 0.70,  # Exactly at minimum
             "expected_sl_distance": 0.70,   # max(0.70, 0.70) = 0.70
-            "expected_tp_distance": 1.40,   # max(1.40, 1.05) = 1.40
+            "expected_tp_distance": 1.40,   # max(1.40, 0.91) = 1.40
         },
     ]
     
@@ -81,7 +81,7 @@ def test_atr_adjusted_calculations():
             
             # Calculate ATR-based values
             atr_sl = 1.0 * atr  # 1×ATR
-            atr_tp = 1.5 * atr  # 1.5×ATR
+            atr_tp = 1.3 * atr  # 1.3×ATR
             
             # Take maximum between fixed and ATR-based
             sl_distance = max(min_sl_pips * pip_value, atr_sl)
@@ -95,7 +95,7 @@ def test_atr_adjusted_calculations():
             
             # Calculate ATR-based values
             atr_sl = 1.0 * atr  # 1×ATR
-            atr_tp = 1.5 * atr  # 1.5×ATR
+            atr_tp = 1.3 * atr  # 1.3×ATR
             
             # Take maximum between fixed and ATR-based (convert pips to price)
             sl_distance = max(min_sl_pips * pip_value, atr_sl)
@@ -162,16 +162,16 @@ def test_atr_adjusted_calculations():
     # Summary of rules
     print("\nATR-ADJUSTED SL/TP RULES SUMMARY:")
     print("\nBTCUSD (1 pip = 1 point):")
-    print("  BUY:  SL = Entry - max(40, 1×ATR) | TP = Entry + max(65, 1.5×ATR)")
-    print("  SELL: SL = Entry + max(40, 1×ATR) | TP = Entry - max(65, 1.5×ATR)")
+    print("  BUY:  SL = Entry - max(40, 1×ATR) | TP = Entry + max(65, 1.3×ATR)")
+    print("  SELL: SL = Entry + max(40, 1×ATR) | TP = Entry - max(65, 1.3×ATR)")
     print("  Note: When ATR < 40, uses fixed 40 pips for SL")
-    print("        When ATR < 43.33, uses fixed 65 pips for TP")
+    print("        When ATR < 50, uses fixed 65 pips for TP")
     
     print("\nXAUUSD (1 pip = 0.01):")
-    print("  BUY:  SL = Entry - max(70 pips, 1×ATR) | TP = Entry + max(140 pips, 1.5×ATR)")
-    print("  SELL: SL = Entry + max(70 pips, 1×ATR) | TP = Entry - max(140 pips, 1.5×ATR)")
+    print("  BUY:  SL = Entry - max(70 pips, 1×ATR) | TP = Entry + max(140 pips, 1.3×ATR)")
+    print("  SELL: SL = Entry + max(70 pips, 1×ATR) | TP = Entry - max(140 pips, 1.3×ATR)")
     print("  Note: When ATR < 0.70, uses fixed 70 pips (0.70) for SL")
-    print("        When ATR < 0.93, uses fixed 140 pips (1.40) for TP")
+    print("        When ATR < 1.08, uses fixed 140 pips (1.40) for TP")
     
     print("\nKEY FEATURES:")
     print("- Adapts to market volatility using ATR")
