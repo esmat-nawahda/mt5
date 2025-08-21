@@ -105,27 +105,31 @@ RANGE_DETECTION_CONFIG = {
 # ================================================================
 
 TP_SL_ADJUSTMENT_CONFIG = {
-    'use_normalization': False,         # Disabled - using fixed rules
-    'use_fixed_pips': True,             # Enable fixed pip values
-    'use_support_resistance': False,    # Disabled - using fixed rules
-    'sl_normalization_factor': 1.15,    # Not used when fixed pips enabled
-    'tp_normalization_factor': 0.18,    # Not used when fixed pips enabled
-    'sl_buffer_pips': 100,              # Not used when fixed pips enabled
-    'tp_buffer_pips': 10,               # Not used when fixed pips enabled
-    'min_risk_reward_ratio': 0.28,      # Updated RR for fixed rules
+    'use_atr_adjustment': True,         # Enable ATR-based adjustment
+    'use_normalization': False,         # Disabled - using ATR rules
+    'use_fixed_pips': False,            # Disabled - using ATR rules
+    'use_support_resistance': False,    # Disabled - using ATR rules
+    'atr_sl_multiplier': 1.0,          # SL = max(min_pips, 1×ATR)
+    'atr_tp_multiplier': 1.5,          # TP = max(min_pips, 1.5×ATR)
+    'sl_buffer_pips': 100,              # Not used when ATR enabled
+    'tp_buffer_pips': 10,               # Not used when ATR enabled
+    'min_risk_reward_ratio': 1.5,       # Minimum R:R ratio expected
     'max_spread_multiplier': 3.0,        # Minimum SL = 3x spread
     
     # Specific adjustments per instrument
     'instruments_adjustments': {
         'XAUUSD': {
-            # Normalization factors for Gold (not used when fixed pips enabled)
-            'sl_normalization_factor': 1.15,   # Not used
-            'tp_normalization_factor': 0.18,   # Not used
-            'min_risk_reward_ratio': 0.28,     # Gold: 140/500 = 0.28 RR ratio
-            # Fixed pip values for Gold - MAIN CONFIGURATION
-            'fixed_sl_pips_buy': 500,      # Gold BUY: SL at entry - 500 pips
+            # ATR-based adjustment for Gold
+            'atr_sl_multiplier': 1.0,          # SL = max(70 pips, 1×ATR)
+            'atr_tp_multiplier': 1.5,          # TP = max(140 pips, 1.5×ATR)
+            'min_risk_reward_ratio': 1.5,      # Expected minimum R:R
+            # Minimum fixed pip values for Gold (used with ATR)
+            'min_sl_pips': 70,             # Minimum SL distance: 70 pips
+            'min_tp_pips': 140,            # Minimum TP distance: 140 pips
+            # Legacy fixed values (for reference)
+            'fixed_sl_pips_buy': 70,       # Gold BUY: SL at entry - 70 pips
             'fixed_tp_pips_buy': 140,      # Gold BUY: TP at entry + 140 pips
-            'fixed_sl_pips_sell': 500,     # Gold SELL: SL at entry + 500 pips
+            'fixed_sl_pips_sell': 70,      # Gold SELL: SL at entry + 70 pips
             'fixed_tp_pips_sell': 140,     # Gold SELL: TP at entry - 140 pips
             # Old factor-based values (not used)
             'tp_reduction_factor': 0.20,
@@ -135,15 +139,18 @@ TP_SL_ADJUSTMENT_CONFIG = {
             'min_sl_points': 25
         },
         'BTCUSD': {
-            # Normalization factors for Bitcoin (not used when fixed pips enabled)
-            'sl_normalization_factor': 1.15,   # Not used
-            'tp_normalization_factor': 0.18,   # Not used
-            'min_risk_reward_ratio': 0.29,     # Bitcoin: 70/240 = 0.29 RR ratio
-            # Fixed pip values for Bitcoin - MAIN CONFIGURATION
-            'fixed_sl_pips_buy': 240,      # BTC BUY: SL at entry - 240 pips
-            'fixed_tp_pips_buy': 70,       # BTC BUY: TP at entry + 70 pips
-            'fixed_sl_pips_sell': 240,     # BTC SELL: SL at entry + 240 pips
-            'fixed_tp_pips_sell': 70,      # BTC SELL: TP at entry - 70 pips
+            # ATR-based adjustment for Bitcoin
+            'atr_sl_multiplier': 1.0,          # SL = max(40 pips, 1×ATR)
+            'atr_tp_multiplier': 1.5,          # TP = max(65 pips, 1.5×ATR)
+            'min_risk_reward_ratio': 1.5,      # Expected minimum R:R
+            # Minimum fixed pip values for Bitcoin (used with ATR)
+            'min_sl_pips': 40,             # Minimum SL distance: 40 pips
+            'min_tp_pips': 65,             # Minimum TP distance: 65 pips
+            # Legacy fixed values (for reference)
+            'fixed_sl_pips_buy': 40,       # BTC BUY: SL at entry - 40 pips
+            'fixed_tp_pips_buy': 65,       # BTC BUY: TP at entry + 65 pips
+            'fixed_sl_pips_sell': 40,      # BTC SELL: SL at entry + 40 pips
+            'fixed_tp_pips_sell': 65,      # BTC SELL: TP at entry - 65 pips
             # Old factor-based values (not used)
             'tp_reduction_factor': 0.15,
             'sl_increase_factor': 4.7,

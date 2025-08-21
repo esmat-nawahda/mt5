@@ -1,31 +1,31 @@
-# Fixed SL/TP Rules Implementation
+# ATR-Adjusted SL/TP Rules Implementation
 
 ## Overview
-The trading bot now uses **FIXED** Stop Loss (SL) and Take Profit (TP) values for BTCUSD and XAUUSD, regardless of what DeepSeek AI suggests. The AI analysis is still used to determine trade direction (BUY/SELL) and confidence, but the SL/TP values are overridden with fixed pip values.
+The trading bot now uses **ATR-ADJUSTED** Stop Loss (SL) and Take Profit (TP) values that adapt to market volatility while maintaining minimum protective levels. The AI analysis is still used to determine trade direction (BUY/SELL) and confidence, but the SL/TP values are calculated using ATR (Average True Range) with minimum fixed values as a floor.
 
-## Fixed Rules
+## ATR-Adjusted Rules
 
 ### BTCUSD (Bitcoin)
 - **BUY Position:**
-  - SL = Entry Price - 240 pips
-  - TP = Entry Price + 70 pips
-  - Risk/Reward Ratio = 1:0.29
+  - SL = Entry Price - max(40 pips, 1×ATR)
+  - TP = Entry Price + max(65 pips, 1.5×ATR)
+  - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:1.62 with low volatility)
 
 - **SELL Position:**
-  - SL = Entry Price + 240 pips  
-  - TP = Entry Price - 70 pips
-  - Risk/Reward Ratio = 1:0.29
+  - SL = Entry Price + max(40 pips, 1×ATR)
+  - TP = Entry Price - max(65 pips, 1.5×ATR)
+  - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:1.62 with low volatility)
 
 ### XAUUSD (Gold)
 - **BUY Position:**
-  - SL = Entry Price - 500 pips (5.00 in price)
-  - TP = Entry Price + 140 pips (1.40 in price)
-  - Risk/Reward Ratio = 1:0.28
+  - SL = Entry Price - max(70 pips, 1×ATR) 
+  - TP = Entry Price + max(140 pips, 1.5×ATR)
+  - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:2.0 with low volatility)
 
 - **SELL Position:**
-  - SL = Entry Price + 500 pips (5.00 in price)
-  - TP = Entry Price - 140 pips (1.40 in price)
-  - Risk/Reward Ratio = 1:0.28
+  - SL = Entry Price + max(70 pips, 1×ATR)
+  - TP = Entry Price - max(140 pips, 1.5×ATR)
+  - Minimum Risk/Reward Ratio = 1:1.5 (up to 1:2.0 with low volatility)
 
 ## Implementation Details
 
@@ -60,22 +60,39 @@ The trading bot now uses **FIXED** Stop Loss (SL) and Take Profit (TP) values fo
 
 4. The trade is executed with these fixed values
 
+### How ATR Adjustment Works
+
+1. **ATR Calculation**: The bot calculates the 14-period ATR on H1 timeframe
+2. **Minimum Values**: Each instrument has minimum SL/TP distances that act as a floor
+3. **Maximum Function**: The bot takes the MAXIMUM between:
+   - The minimum fixed pip value
+   - The ATR-based calculation (1×ATR for SL, 1.5×ATR for TP)
+4. **Dynamic Adaptation**: 
+   - In low volatility: Uses minimum fixed values for protection
+   - In high volatility: Uses larger ATR-based values for wider stops
+
 ### Testing
 
-Run `test_fixed_sl_tp.py` to verify the implementation:
+Run `test_atr_sl_tp.py` to verify the implementation:
 ```bash
-python test_fixed_sl_tp.py
+python test_atr_sl_tp.py
 ```
 
-This test script validates that the fixed rules are correctly applied for both instruments and both trade directions.
+This test script validates the ATR-adjusted calculations with various volatility scenarios.
 
 ## Important Notes
 
-- The Risk/Reward ratios are relatively low (around 1:0.28-0.29)
-- These fixed values will be applied to ALL trades, regardless of market conditions
-- The AI's market analysis is still used for trade timing and direction
-- Consider monitoring performance and adjusting values if needed
-- Ensure your account has sufficient margin for the larger stop losses
+- **Adaptive to Volatility**: Automatically widens stops in volatile markets
+- **Protected Minimums**: Never goes below minimum safety thresholds
+- **Excellent Risk/Reward**: Maintains minimum 1:1.5 ratio, often better
+- **ATR Source**: Uses H1 timeframe ATR(14) for consistency
+- **Volatility Thresholds**:
+  - BTCUSD: ATR < 40 uses fixed minimums
+  - XAUUSD: ATR < 0.70 uses fixed minimums
+- **Benefits**:
+  - Reduces stop-outs in volatile conditions
+  - Maintains tight stops in calm markets
+  - Adapts to changing market conditions automatically
 
 ## Rollback Instructions
 

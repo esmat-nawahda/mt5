@@ -17,37 +17,37 @@ def test_sl_tp_calculations():
             "symbol": "BTCUSD",
             "action": "BUY",
             "entry": 100000.00,
-            "expected_sl": 100000.00 - 240,  # Entry - 240 pips
-            "expected_tp": 100000.00 + 70,   # Entry + 70 pips
-            "sl_pips": 240,
-            "tp_pips": 70
+            "expected_sl": 100000.00 - 40,   # Entry - 40 pips
+            "expected_tp": 100000.00 + 60,   # Entry + 60 pips
+            "sl_pips": 40,
+            "tp_pips": 60
         },
         {
             "symbol": "BTCUSD", 
             "action": "SELL",
             "entry": 100000.00,
-            "expected_sl": 100000.00 + 240,  # Entry + 240 pips
-            "expected_tp": 100000.00 - 70,   # Entry - 70 pips
-            "sl_pips": 240,
-            "tp_pips": 70
+            "expected_sl": 100000.00 + 40,   # Entry + 40 pips
+            "expected_tp": 100000.00 - 60,   # Entry - 60 pips
+            "sl_pips": 40,
+            "tp_pips": 60
         },
         {
             "symbol": "XAUUSD",
             "action": "BUY",
             "entry": 2650.00,
-            "expected_sl": 2650.00 - 5.00,   # Entry - 500 pips (5.00 in price)
-            "expected_tp": 2650.00 + 1.40,   # Entry + 140 pips (1.40 in price)
-            "sl_pips": 500,
-            "tp_pips": 140
+            "expected_sl": 2650.00 - 0.70,   # Entry - 70 pips (0.70 in price)
+            "expected_tp": 2650.00 + 1.30,   # Entry + 130 pips (1.30 in price)
+            "sl_pips": 70,
+            "tp_pips": 130
         },
         {
             "symbol": "XAUUSD",
             "action": "SELL", 
             "entry": 2650.00,
-            "expected_sl": 2650.00 + 5.00,   # Entry + 500 pips (5.00 in price)
-            "expected_tp": 2650.00 - 1.40,   # Entry - 140 pips (1.40 in price)
-            "sl_pips": 500,
-            "tp_pips": 140
+            "expected_sl": 2650.00 + 0.70,   # Entry + 70 pips (0.70 in price)
+            "expected_tp": 2650.00 - 1.30,   # Entry - 130 pips (1.30 in price)
+            "sl_pips": 70,
+            "tp_pips": 130
         }
     ]
     
@@ -58,8 +58,8 @@ def test_sl_tp_calculations():
         if 'BTC' in symbol:
             # BTCUSD: 1 pip = 1 point
             pip_value = 1.0
-            sl_pips = 240
-            tp_pips = 70
+            sl_pips = 40
+            tp_pips = 60
             
             if action == "BUY":
                 final_sl = entry - (sl_pips * pip_value)
@@ -71,8 +71,8 @@ def test_sl_tp_calculations():
         elif 'XAU' in symbol:
             # XAUUSD: 1 pip = 0.01
             pip_value = 0.01
-            sl_pips = 500
-            tp_pips = 140
+            sl_pips = 70
+            tp_pips = 130
             
             if action == "BUY":
                 final_sl = entry - (sl_pips * pip_value)
@@ -128,12 +128,12 @@ def test_sl_tp_calculations():
     # Summary of rules
     print("\nFIXED SL/TP RULES SUMMARY:")
     print("\nBTCUSD (1 pip = 1 point):")
-    print("  BUY:  SL = Entry - 240 pips | TP = Entry + 70 pips | R:R = 1:0.29")
-    print("  SELL: SL = Entry + 240 pips | TP = Entry - 70 pips | R:R = 1:0.29")
+    print("  BUY:  SL = Entry - 40 pips | TP = Entry + 60 pips | R:R = 1:1.5")
+    print("  SELL: SL = Entry + 40 pips | TP = Entry - 60 pips | R:R = 1:1.5")
     
     print("\nXAUUSD (1 pip = 0.01):")
-    print("  BUY:  SL = Entry - 500 pips | TP = Entry + 140 pips | R:R = 1:0.28")
-    print("  SELL: SL = Entry + 500 pips | TP = Entry - 140 pips | R:R = 1:0.28")
+    print("  BUY:  SL = Entry - 70 pips | TP = Entry + 130 pips | R:R = 1:1.86")
+    print("  SELL: SL = Entry + 70 pips | TP = Entry - 130 pips | R:R = 1:1.86")
 
 if __name__ == "__main__":
     test_sl_tp_calculations()

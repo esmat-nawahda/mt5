@@ -741,67 +741,113 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
     # Round to 1 decimal place for practical lot sizes
     return round(final_lot_size, 1)
 
-def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None) -> tuple:
-    """Adjust TP and SL based on FIXED RULES:
-    BTCUSD BUY: SL = Entry - 240 pips, TP = Entry + 70 pips
-    BTCUSD SELL: SL = Entry + 240 pips, TP = Entry - 70 pips
-    XAUUSD BUY: SL = Entry - 500 pips, TP = Entry + 140 pips
-    XAUUSD SELL: SL = Entry + 500 pips, TP = Entry - 140 pips
+def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None, atr: float = None) -> tuple:
+    """Adjust TP and SL based on ATR-ADJUSTED RULES:
+    BTCUSD:
+        BUY: SL = Entry - max(40 pips, 1×ATR), TP = Entry + max(65 pips, 1.5×ATR)
+        SELL: SL = Entry + max(40 pips, 1×ATR), TP = Entry - max(65 pips, 1.5×ATR)
+    XAUUSD:
+        BUY: SL = Entry - max(70 pips, 1×ATR), TP = Entry + max(140 pips, 1.5×ATR)
+        SELL: SL = Entry + max(70 pips, 1×ATR), TP = Entry - max(140 pips, 1.5×ATR)
     """
     
     # Determine if BUY or SELL based on original SL position from DeepSeek
     is_buy = sl < entry
     
-    # Apply fixed rules based on instrument
+    # Get ATR value if not provided
+    if atr is None:
+        # Try to get ATR from MT5 (fallback to fixed values if not available)
+        print_warning("  [ATR] No ATR provided, using minimum fixed values")
+        atr = 0
+    
+    # Apply ATR-adjusted rules based on instrument
     if 'BTC' in symbol:
         # BTCUSD: 1 pip = 1 point
         pip_value = 1.0
         
+        # Calculate ATR-based values
+        atr_sl = 1.0 * atr  # 1×ATR
+        atr_tp = 1.5 * atr  # 1.5×ATR
+        
+        # Minimum fixed values in price units
+        min_sl_pips = 40
+        min_tp_pips = 65
+        
+        # Take maximum between fixed and ATR-based
+        sl_distance = max(min_sl_pips * pip_value, atr_sl)
+        tp_distance = max(min_tp_pips * pip_value, atr_tp)
+        
         if is_buy:
-            # BUY: SL = Entry - 240, TP = Entry + 70
-            final_sl = entry - (240 * pip_value)
-            final_tp = entry + (70 * pip_value)
-            print_info(f"  [FIXED RULES] {symbol} BUY: SL = {entry:.2f} - 240 = {final_sl:.2f}")
-            print_info(f"  [FIXED RULES] {symbol} BUY: TP = {entry:.2f} + 70 = {final_tp:.2f}")
+            # BUY: SL below entry, TP above entry
+            final_sl = entry - sl_distance
+            final_tp = entry + tp_distance
+            print_info(f"  [ATR-ADJUSTED] {symbol} BUY:")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    SL distance: max(40, {atr_sl:.2f}) = {sl_distance:.2f}")
+            print_info(f"    TP distance: max(65, {atr_tp:.2f}) = {tp_distance:.2f}")
+            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
         else:
-            # SELL: SL = Entry + 240, TP = Entry - 70
-            final_sl = entry + (240 * pip_value)
-            final_tp = entry - (70 * pip_value)
-            print_info(f"  [FIXED RULES] {symbol} SELL: SL = {entry:.2f} + 240 = {final_sl:.2f}")
-            print_info(f"  [FIXED RULES] {symbol} SELL: TP = {entry:.2f} - 70 = {final_tp:.2f}")
+            # SELL: SL above entry, TP below entry
+            final_sl = entry + sl_distance
+            final_tp = entry - tp_distance
+            print_info(f"  [ATR-ADJUSTED] {symbol} SELL:")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    SL distance: max(40, {atr_sl:.2f}) = {sl_distance:.2f}")
+            print_info(f"    TP distance: max(65, {atr_tp:.2f}) = {tp_distance:.2f}")
+            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
             
-        # Risk/Reward = 70/240 = 0.292
-        print_info(f"  [FIXED RULES] Risk/Reward Ratio: 1:0.29 (TP=70 pips, SL=240 pips)")
+        # Calculate Risk/Reward
+        rr_ratio = tp_distance / sl_distance if sl_distance > 0 else 0
+        print_info(f"  [ATR-ADJUSTED] Risk/Reward Ratio: 1:{rr_ratio:.2f}")
         
     elif 'XAU' in symbol:
         # XAUUSD: 1 pip = 0.01 for Gold
         pip_value = 0.01
         
+        # Calculate ATR-based values
+        atr_sl = 1.0 * atr  # 1×ATR
+        atr_tp = 1.5 * atr  # 1.5×ATR
+        
+        # Minimum fixed values in price units
+        min_sl_pips = 70
+        min_tp_pips = 140
+        
+        # Take maximum between fixed and ATR-based (convert pips to price)
+        sl_distance = max(min_sl_pips * pip_value, atr_sl)
+        tp_distance = max(min_tp_pips * pip_value, atr_tp)
+        
         if is_buy:
-            # BUY: SL = Entry - 500 pips, TP = Entry + 140 pips
-            final_sl = entry - (500 * pip_value)
-            final_tp = entry + (140 * pip_value)
-            print_info(f"  [FIXED RULES] {symbol} BUY: SL = {entry:.2f} - 5.00 = {final_sl:.2f}")
-            print_info(f"  [FIXED RULES] {symbol} BUY: TP = {entry:.2f} + 1.40 = {final_tp:.2f}")
+            # BUY: SL below entry, TP above entry
+            final_sl = entry - sl_distance
+            final_tp = entry + tp_distance
+            print_info(f"  [ATR-ADJUSTED] {symbol} BUY:")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    SL distance: max({min_sl_pips*pip_value:.2f}, {atr_sl:.2f}) = {sl_distance:.2f}")
+            print_info(f"    TP distance: max({min_tp_pips*pip_value:.2f}, {atr_tp:.2f}) = {tp_distance:.2f}")
+            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
         else:
-            # SELL: SL = Entry + 500 pips, TP = Entry - 140 pips
-            final_sl = entry + (500 * pip_value)
-            final_tp = entry - (140 * pip_value)
-            print_info(f"  [FIXED RULES] {symbol} SELL: SL = {entry:.2f} + 5.00 = {final_sl:.2f}")
-            print_info(f"  [FIXED RULES] {symbol} SELL: TP = {entry:.2f} - 1.40 = {final_tp:.2f}")
+            # SELL: SL above entry, TP below entry
+            final_sl = entry + sl_distance
+            final_tp = entry - tp_distance
+            print_info(f"  [ATR-ADJUSTED] {symbol} SELL:")
+            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.5×ATR={atr_tp:.2f}")
+            print_info(f"    SL distance: max({min_sl_pips*pip_value:.2f}, {atr_sl:.2f}) = {sl_distance:.2f}")
+            print_info(f"    TP distance: max({min_tp_pips*pip_value:.2f}, {atr_tp:.2f}) = {tp_distance:.2f}")
+            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
             
-        # Risk/Reward = 140/500 = 0.28
-        print_info(f"  [FIXED RULES] Risk/Reward Ratio: 1:0.28 (TP=140 pips, SL=500 pips)")
+        # Calculate Risk/Reward
+        rr_ratio = tp_distance / sl_distance if sl_distance > 0 else 0
+        print_info(f"  [ATR-ADJUSTED] Risk/Reward Ratio: 1:{rr_ratio:.2f}")
         
     else:
-        # Fallback for other symbols (shouldn't happen with current config)
+        # Fallback for other symbols
         print_warning(f"  Unknown symbol {symbol}, using original SL/TP")
         final_sl = sl
         final_tp = tp
     
     return final_sl, final_tp
 
-def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None):
+def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None, atr: float = None):
     """Optimized trade execution with pre-calculated data and 5s timeout"""
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
     execution_timeout = exec_config.get('trade_execution_timeout', 5)
@@ -830,8 +876,24 @@ def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: 
         # Use pre-calculated lot size
         volume = get_precalc_lot_size(symbol)
         
-        # Adjust TP/SL based on configuration (use support/resistance if available)
-        adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels)
+        # Get ATR if not provided
+        if atr is None:
+            # Try to get H1 ATR
+            rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
+            if rates_h1 is not None and len(rates_h1) >= 14:
+                df_h1 = pd.DataFrame(rates_h1)
+                high = df_h1['high']
+                low = df_h1['low']
+                close = df_h1['close']
+                tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
+                atr = tr.rolling(window=14).mean().iloc[-1]
+                print_info(f"  [ATR] Calculated H1 ATR(14): {atr:.2f}")
+            else:
+                atr = 0
+                print_warning("  [ATR] Could not calculate ATR, using minimum fixed values")
+        
+        # Adjust TP/SL based on configuration with ATR
+        adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels, atr)
         
         # Optimized order request
         req = {
@@ -890,13 +952,13 @@ def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: 
         print_error(f"❌ Fast execution error: {e}")
         return None
 
-def open_trade(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None):
+def open_trade(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None, atr: float = None):
     """Standard trade execution (fallback or when fast mode disabled)"""
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
     
     # Use fast execution if enabled
     if exec_config.get('fast_mode', True):
-        return open_trade_fast(symbol, action, sl, tp, key_levels)
+        return open_trade_fast(symbol, action, sl, tp, key_levels, atr)
     
     # Standard execution path
     ensure_symbol(symbol)
@@ -921,8 +983,24 @@ def open_trade(symbol: str, action: str, sl: float, tp: float, key_levels: dict 
     capital_change = account.equity - starting_capital
     print_info(f"Dynamic Lot Sizing: Equity ${account.equity:.2f} | Change: ${capital_change:+.2f} | Lot: {volume}")
     
-    # Adjust TP/SL based on configuration (use support/resistance if available)
-    adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels)
+    # Get ATR if not provided
+    if atr is None:
+        # Try to get H1 ATR
+        rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
+        if rates_h1 is not None and len(rates_h1) >= 14:
+            df_h1 = pd.DataFrame(rates_h1)
+            high = df_h1['high']
+            low = df_h1['low']
+            close = df_h1['close']
+            tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
+            atr = tr.rolling(window=14).mean().iloc[-1]
+            print_info(f"  [ATR] Calculated H1 ATR(14): {atr:.2f}")
+        else:
+            atr = 0
+            print_warning("  [ATR] Could not calculate ATR, using minimum fixed values")
+    
+    # Adjust TP/SL based on configuration with ATR
+    adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels, atr)
     
     req = {
         "action": mt5.TRADE_ACTION_DEAL,
@@ -1398,7 +1476,8 @@ def cycle_once():
                 "analysis": analysis.get("analysis", ""),
                 "guardian": analysis.get("guardian_status", {}),
                 "alerts": analysis.get("alerts", []),
-                "key_levels": analysis.get("key_levels", {})
+                "key_levels": analysis.get("key_levels", {}),
+                "atr": tech_data['measures']['atr_h1_points']  # Include ATR for SL/TP adjustment
             })
             
         except Exception as e:
@@ -1540,7 +1619,9 @@ def cycle_once():
         if entry and sl and tp:
             print_trade_decision(symbol, "OPEN", f"High confidence signal ({confidence:.1f}%) - Thanatos approved")
             key_levels = sig.get("key_levels", {})
-            res = open_trade(symbol, action, float(sl), float(tp), key_levels)
+            # Get ATR from technical data if available
+            atr_value = sig.get("atr", None)
+            res = open_trade(symbol, action, float(sl), float(tp), key_levels, atr_value)
             
             if res and res.retcode == mt5.TRADE_RETCODE_DONE:
                 trade_id = str(res.order or res.deal or decision_id)
