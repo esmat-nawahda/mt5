@@ -742,168 +742,62 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
     return round(final_lot_size, 1)
 
 def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None) -> tuple:
-    """Adjust TP and SL based on configuration priority:
-    1. Normalization factors - HIGHEST PRIORITY
-       - BTCUSD: SL × 1.15, TP × 0.15
-       - XAUUSD: SL × 1.05, TP × 0.15
-    2. Fixed pip values (fallback if normalization disabled)
-    3. Support/resistance based calculation
-    4. Factor-based calculation (legacy fallback)
+    """Adjust TP and SL based on FIXED RULES:
+    BTCUSD BUY: SL = Entry - 240 pips, TP = Entry + 70 pips
+    BTCUSD SELL: SL = Entry + 240 pips, TP = Entry - 70 pips
+    XAUUSD BUY: SL = Entry - 500 pips, TP = Entry + 140 pips
+    XAUUSD SELL: SL = Entry + 500 pips, TP = Entry - 140 pips
     """
-    config = TP_SL_ADJUSTMENT_CONFIG
-    adjustments = get_tp_sl_adjustment(symbol)
     
-    if not adjustments:
-        return sl, tp
+    # Determine if BUY or SELL based on original SL position from DeepSeek
+    is_buy = sl < entry
     
-    # Convert pips to price units based on instrument
-    if 'XAU' in symbol:
-        pip_value = 0.01  # 1 pip = 0.01 for Gold
-    elif 'BTC' in symbol:
-        pip_value = 1.0   # 1 pip = 1 point for Bitcoin
+    # Apply fixed rules based on instrument
+    if 'BTC' in symbol:
+        # BTCUSD: 1 pip = 1 point
+        pip_value = 1.0
+        
+        if is_buy:
+            # BUY: SL = Entry - 240, TP = Entry + 70
+            final_sl = entry - (240 * pip_value)
+            final_tp = entry + (70 * pip_value)
+            print_info(f"  [FIXED RULES] {symbol} BUY: SL = {entry:.2f} - 240 = {final_sl:.2f}")
+            print_info(f"  [FIXED RULES] {symbol} BUY: TP = {entry:.2f} + 70 = {final_tp:.2f}")
+        else:
+            # SELL: SL = Entry + 240, TP = Entry - 70
+            final_sl = entry + (240 * pip_value)
+            final_tp = entry - (70 * pip_value)
+            print_info(f"  [FIXED RULES] {symbol} SELL: SL = {entry:.2f} + 240 = {final_sl:.2f}")
+            print_info(f"  [FIXED RULES] {symbol} SELL: TP = {entry:.2f} - 70 = {final_tp:.2f}")
+            
+        # Risk/Reward = 70/240 = 0.292
+        print_info(f"  [FIXED RULES] Risk/Reward Ratio: 1:0.29 (TP=70 pips, SL=240 pips)")
+        
+    elif 'XAU' in symbol:
+        # XAUUSD: 1 pip = 0.01 for Gold
+        pip_value = 0.01
+        
+        if is_buy:
+            # BUY: SL = Entry - 500 pips, TP = Entry + 140 pips
+            final_sl = entry - (500 * pip_value)
+            final_tp = entry + (140 * pip_value)
+            print_info(f"  [FIXED RULES] {symbol} BUY: SL = {entry:.2f} - 5.00 = {final_sl:.2f}")
+            print_info(f"  [FIXED RULES] {symbol} BUY: TP = {entry:.2f} + 1.40 = {final_tp:.2f}")
+        else:
+            # SELL: SL = Entry + 500 pips, TP = Entry - 140 pips
+            final_sl = entry + (500 * pip_value)
+            final_tp = entry - (140 * pip_value)
+            print_info(f"  [FIXED RULES] {symbol} SELL: SL = {entry:.2f} + 5.00 = {final_sl:.2f}")
+            print_info(f"  [FIXED RULES] {symbol} SELL: TP = {entry:.2f} - 1.40 = {final_tp:.2f}")
+            
+        # Risk/Reward = 140/500 = 0.28
+        print_info(f"  [FIXED RULES] Risk/Reward Ratio: 1:0.28 (TP=140 pips, SL=500 pips)")
+        
     else:
-        pip_value = 0.0001  # Standard forex pip
-    
-    # Check if we should use normalization factors (HIGHEST PRIORITY)
-    if config.get('use_normalization', False):
-        # Get normalization factors - use instrument-specific if available
-        sl_factor = adjustments.get('sl_normalization_factor', config.get('sl_normalization_factor', 1.25))
-        tp_factor = adjustments.get('tp_normalization_factor', config.get('tp_normalization_factor', 0.15))
-        
-        # Calculate original distances from DeepSeek suggestion
-        sl_distance = abs(entry - sl)
-        tp_distance = abs(tp - entry)
-        
-        # Apply normalization factors
-        normalized_sl_distance = sl_distance * sl_factor
-        normalized_tp_distance = tp_distance * tp_factor
-        
-        # Determine if BUY or SELL based on original SL position
-        is_buy = sl < entry
-        
-        if is_buy:
-            # BUY position
-            final_sl = entry - normalized_sl_distance
-            final_tp = entry + normalized_tp_distance
-            print_info(f"  [NORMALIZATION] {symbol} BUY: DeepSeek SL distance={sl_distance:.2f} x {sl_factor} = {normalized_sl_distance:.2f}")
-            print_info(f"  [NORMALIZATION] {symbol} BUY: DeepSeek TP distance={tp_distance:.2f} x {tp_factor} = {normalized_tp_distance:.2f}")
-            print_info(f"  [NORMALIZATION] Final SL={final_sl:.5f}, Final TP={final_tp:.5f}")
-        else:
-            # SELL position
-            final_sl = entry + normalized_sl_distance
-            final_tp = entry - normalized_tp_distance
-            print_info(f"  [NORMALIZATION] {symbol} SELL: DeepSeek SL distance={sl_distance:.2f} x {sl_factor} = {normalized_sl_distance:.2f}")
-            print_info(f"  [NORMALIZATION] {symbol} SELL: DeepSeek TP distance={tp_distance:.2f} x {tp_factor} = {normalized_tp_distance:.2f}")
-            print_info(f"  [NORMALIZATION] Final SL={final_sl:.5f}, Final TP={final_tp:.5f}")
-        
-        # Calculate Risk/Reward ratio for logging
-        rr_ratio = normalized_tp_distance / normalized_sl_distance
-        print_info(f"  [NORMALIZATION] Risk/Reward Ratio: {rr_ratio:.3f} (TP/SL = {normalized_tp_distance:.2f}/{normalized_sl_distance:.2f})")
-        
-        return final_sl, final_tp
-    
-    # Check if we should use fixed pip values (second priority)
-    elif config.get('use_fixed_pips', False):
-        # Determine if BUY or SELL based on original SL position
-        is_buy = sl < entry
-        
-        if is_buy:
-            # BUY position - use buy-specific fixed pips
-            sl_pips = adjustments.get('fixed_sl_pips_buy', 100)
-            tp_pips = adjustments.get('fixed_tp_pips_buy', 50)
-            final_sl = entry - (sl_pips * pip_value)
-            final_tp = entry + (tp_pips * pip_value)
-            print_info(f"  [FIXED PIPS] {symbol} BUY: SL at entry-{sl_pips} pips={final_sl:.5f}, TP at entry+{tp_pips} pips={final_tp:.5f}")
-        else:
-            # SELL position - use sell-specific fixed pips
-            sl_pips = adjustments.get('fixed_sl_pips_sell', 100)
-            tp_pips = adjustments.get('fixed_tp_pips_sell', 50)
-            final_sl = entry + (sl_pips * pip_value)
-            final_tp = entry - (tp_pips * pip_value)
-            print_info(f"  [FIXED PIPS] {symbol} SELL: SL at entry+{sl_pips} pips={final_sl:.5f}, TP at entry-{tp_pips} pips={final_tp:.5f}")
-        
-        return final_sl, final_tp
-    
-    # Check if we should use support/resistance (second priority)
-    elif config.get('use_support_resistance', False) and support_resistance:
-        sl_buffer = config.get('sl_buffer_pips', 100) * pip_value
-        tp_buffer = config.get('tp_buffer_pips', 10) * pip_value
-        
-        support = support_resistance.get('support')
-        resistance = support_resistance.get('resistance')
-        
-        if support and resistance:
-            # Determine if BUY or SELL based on original SL position
-            is_buy = sl < entry
-            
-            if is_buy:
-                # BUY: SL at support - 100 pips, TP at resistance - 10 pips
-                final_sl = support - sl_buffer
-                final_tp = resistance - tp_buffer
-                print_info(f"  📍 Using Support/Resistance: Support={support:.5f}, Resistance={resistance:.5f}")
-                print_info(f"  📍 BUY Setup: SL at Support-100pips={final_sl:.5f}, TP at Resistance-10pips={final_tp:.5f}")
-            else:
-                # SELL: SL at resistance + 100 pips, TP at support + 10 pips
-                final_sl = resistance + sl_buffer
-                final_tp = support + tp_buffer
-                print_info(f"  📍 Using Support/Resistance: Support={support:.5f}, Resistance={resistance:.5f}")
-                print_info(f"  📍 SELL Setup: SL at Resistance+100pips={final_sl:.5f}, TP at Support+10pips={final_tp:.5f}")
-            
-            # Apply min/max limits
-            min_sl = adjustments.get('min_sl_points', 10)
-            max_sl = adjustments.get('max_sl_points', 100)
-            min_tp = adjustments.get('min_tp_points', 15)
-            
-            sl_distance = abs(entry - final_sl)
-            tp_distance = abs(final_tp - entry)
-            
-            # Ensure minimum distances
-            if sl_distance < min_sl:
-                if is_buy:
-                    final_sl = entry - min_sl
-                else:
-                    final_sl = entry + min_sl
-            elif sl_distance > max_sl:
-                if is_buy:
-                    final_sl = entry - max_sl
-                else:
-                    final_sl = entry + max_sl
-            
-            if tp_distance < min_tp:
-                if is_buy:
-                    final_tp = entry + min_tp
-                else:
-                    final_tp = entry - min_tp
-            
-            return final_sl, final_tp
-    
-    # Fallback to original factor-based calculation if S/R not available
-    print_info("  ⚠️ Support/Resistance not available - using fallback calculation")
-    
-    # Calculate adjusted values
-    sl_distance = abs(entry - sl)
-    tp_distance = abs(tp - entry)
-    
-    # Apply adjustment factors
-    adjusted_sl_distance = sl_distance * adjustments.get('sl_increase_factor', 1.2)
-    adjusted_tp_distance = tp_distance * adjustments.get('tp_reduction_factor', 0.7)
-    
-    # Apply min/max limits
-    min_sl = adjustments.get('min_sl_points', 10)
-    max_sl = adjustments.get('max_sl_points', 100)
-    min_tp = adjustments.get('min_tp_points', 15)
-    
-    # Ensure minimum distances
-    adjusted_sl_distance = max(min_sl, min(adjusted_sl_distance, max_sl))
-    adjusted_tp_distance = max(min_tp, adjusted_tp_distance)
-    
-    # Calculate final prices
-    if sl < entry:  # Buy position
-        final_sl = entry - adjusted_sl_distance
-        final_tp = entry + adjusted_tp_distance
-    else:  # Sell position
-        final_sl = entry + adjusted_sl_distance
-        final_tp = entry - adjusted_tp_distance
+        # Fallback for other symbols (shouldn't happen with current config)
+        print_warning(f"  Unknown symbol {symbol}, using original SL/TP")
+        final_sl = sl
+        final_tp = tp
     
     return final_sl, final_tp
 
