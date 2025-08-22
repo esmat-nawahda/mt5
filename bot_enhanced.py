@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Enhanced MT5 Multi-Pair Autotrader with Colorful Logging
-Using Thanatos-Guardian-Prime v15.2-MAXPROTECT prompt
+Enhanced MT5 Multi-Pair Autotrader with Volume-Adaptive Strategy
+Using Thanatos-Volume-Adaptive v16.0-VOLVOLT-TRIAD prompt
 - Pairs: XAUUSD, BTCUSD (configurable)
-- Random re-check 1–2 minutes
-- Prioritize most confident pair from DeepSeek
+- Triple position strategies based on Volume/Volatility ratio
+- Independent monitoring per pair
+- Sequential analysis with immediate decisions
 - Block trading 60 min before/after high-impact news
 - Enhanced colorful console output with detailed analysis
 """
@@ -16,6 +17,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import pytz
+import threading
 from dotenv import load_dotenv
 from news_filter import is_blocked_now, next_blocking_event
 from trading_logger import init_logger, log_trade, log_analysis_prompt
@@ -125,6 +127,11 @@ cycle_count = 0
 # Track positions with SL moved to breakeven (eligible for trailing)
 positions_at_breakeven = set()  # Set of position tickets
 
+# Continuous monitoring control - INDEPENDENT PER PAIR
+monitoring_threads = {}  # Dictionary of threads per symbol
+stop_monitoring = {}  # Dictionary of stop flags per symbol
+last_analysis_signals = {}  # Store latest signals per symbol for continuous monitoring
+
 # Pre-calculated data cache for speed optimization
 precalc_cache = {
     'account_info': None,
@@ -132,6 +139,136 @@ precalc_cache = {
     'spread_info': {},
     'last_update': 0
 }
+
+def continuous_position_monitor(symbol):
+    """Continuous monitoring thread for a specific pair - checks every 30 seconds for signal reversals"""
+    global stop_monitoring, last_analysis_signals
+    
+    print_info(f"Starting continuous monitoring for {symbol} (30-second intervals)")
+    
+    while not stop_monitoring.get(symbol, False):
+        try:
+            # Only monitor if we have a position for THIS symbol
+            positions = mt5.positions_get(symbol=symbol)
+            if positions and symbol in last_analysis_signals:
+                print_separator()
+                print_info(f"MONITOR CHECK [{symbol}] - {datetime.now().strftime('%H:%M:%S')}")
+                
+                # Perform signal reversal check for THIS symbol only
+                signal_list = [last_analysis_signals[symbol]] if last_analysis_signals.get(symbol) else []
+                if signal_list:
+                    auto_refresh_open_trades(signal_list)
+                
+            # Sleep for 30 seconds
+            time.sleep(30)
+            
+        except Exception as e:
+            print_error(f"Error monitoring {symbol}: {e}")
+            time.sleep(30)  # Continue monitoring even on error
+    
+    print_info(f"Monitoring thread stopped for {symbol}")
+
+def start_continuous_monitoring(symbol):
+    """Start continuous monitoring thread for a specific symbol if not already running"""
+    global monitoring_threads, stop_monitoring
+    
+    # Check if monitoring already running for this symbol
+    if symbol in monitoring_threads and monitoring_threads[symbol].is_alive():
+        return  # Already running for this symbol
+    
+    stop_monitoring[symbol] = False
+    monitoring_threads[symbol] = threading.Thread(
+        target=continuous_position_monitor, 
+        args=(symbol,),
+        daemon=True,
+        name=f"Monitor-{symbol}"
+    )
+    monitoring_threads[symbol].start()
+    print_success(f"Monitoring started for {symbol} (30-second checks)")
+
+def stop_continuous_monitoring(symbol=None):
+    """Stop continuous monitoring thread(s)
+    If symbol is provided, stop only that symbol's monitoring
+    If no symbol, stop all monitoring threads"""
+    global stop_monitoring, monitoring_threads
+    
+    if symbol:
+        # Stop specific symbol monitoring
+        if symbol in stop_monitoring:
+            stop_monitoring[symbol] = True
+            if symbol in monitoring_threads:
+                monitoring_threads[symbol].join(timeout=5)
+                print_info(f"Monitoring stopped for {symbol}")
+    else:
+        # Stop all monitoring threads
+        for sym in list(stop_monitoring.keys()):
+            stop_monitoring[sym] = True
+        
+        for sym, thread in monitoring_threads.items():
+            if thread.is_alive():
+                thread.join(timeout=5)
+        
+        print_info("All monitoring threads stopped")
+
+def analyze_positions_for_reversal(symbol=None):
+    """Perform immediate analysis to check for signal reversals
+    If symbol provided, check only that symbol
+    Otherwise check all positions"""
+    
+    if symbol:
+        # Check specific symbol
+        positions = mt5.positions_get(symbol=symbol)
+        if not positions:
+            return
+        
+        print_separator()
+        print_info(f"SIGNAL REVERSAL CHECK [{symbol}]")
+        
+        try:
+            # Calculate technical indicators
+            tech_data = calculate_technical_indicators(symbol)
+            if tech_data:
+                # Get AI signal
+                signal = get_ai_signal(symbol, tech_data)
+                if signal:
+                    # Update last signal for this symbol
+                    global last_analysis_signals
+                    last_analysis_signals[symbol] = signal
+                    
+                    # Check for reversal
+                    auto_refresh_open_trades([signal])
+        except Exception as e:
+            print_error(f"Error analyzing {symbol}: {e}")
+    else:
+        # Check all positions
+        positions = mt5.positions_get()
+        if not positions:
+            return
+        
+        print_separator()
+        print_info("SIGNAL REVERSAL CHECK [ALL PAIRS]")
+        
+        # Get fresh signals for all open positions
+        symbols_with_positions = {pos.symbol for pos in positions}
+        
+        for symbol in symbols_with_positions:
+            try:
+                # Calculate technical indicators
+                tech_data = calculate_technical_indicators(symbol)
+                if not tech_data:
+                    continue
+                
+                # Get AI signal
+                signal = get_ai_signal(symbol, tech_data)
+                if signal:
+                    # Update last signal for this symbol
+                    last_analysis_signals[symbol] = signal
+                    
+                    # Check for reversal for this symbol
+                    auto_refresh_open_trades([signal])
+                    
+            except Exception as e:
+                print_error(f"Error analyzing {symbol}: {e}")
 
 def mt5_init():
     if not mt5.initialize(login=MT5_LOGIN or None, password=MT5_PASSWORD or None, server=MT5_SERVER or None):
@@ -151,25 +288,120 @@ def ensure_symbol(sym: str):
             raise RuntimeError(f"Cannot select {sym}")
 
 def calculate_technical_indicators(symbol: str):
-    """Calculate technical indicators for the prompt"""
-    # Get H1 data for indicators
-    rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
-    rates_m15 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M15, 0, 100)
-    rates_m5 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 100)
+    """Calculate technical indicators for all timeframes (D1, H1, M15, M5)"""
+    # Get data for all timeframes
+    rates_d1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 200)  # Need 200 for EMA200
+    rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 200)
+    rates_m15 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M15, 0, 200)
+    rates_m5 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 200)
     
     if rates_h1 is None or len(rates_h1) < 30:
         return None
     
+    df_d1 = pd.DataFrame(rates_d1) if rates_d1 is not None and len(rates_d1) >= 30 else None
     df_h1 = pd.DataFrame(rates_h1)
-    df_m15 = pd.DataFrame(rates_m15)
-    df_m5 = pd.DataFrame(rates_m5)
+    df_m15 = pd.DataFrame(rates_m15) if rates_m15 is not None else None
+    df_m5 = pd.DataFrame(rates_m5) if rates_m5 is not None else None
     
     # Debug: Print available columns for M5 data
     print_info(f"Available M5 columns for {symbol}: {list(df_m5.columns)}")
     
     current_price = float(df_h1['close'].iloc[-1])
     
-    # Calculate ADX(14) on H1
+    # Helper function to calculate all indicators for a timeframe
+    def calculate_timeframe_indicators(df, timeframe_name):
+        """Calculate all indicators for a specific timeframe"""
+        if df is None or len(df) < 30:
+            return None
+            
+        result = {}
+        close_price = float(df['close'].iloc[-1])
+        
+        # EMAs
+        ema20 = df['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+        ema50 = df['close'].ewm(span=50, adjust=False).mean().iloc[-1] if len(df) >= 50 else 0
+        ema200 = df['close'].ewm(span=200, adjust=False).mean().iloc[-1] if len(df) >= 200 else 0
+        
+        # Bollinger Bands
+        sma20 = df['close'].rolling(window=20).mean()
+        std20 = df['close'].rolling(window=20).std()
+        bb_upper = (sma20 + (2 * std20)).iloc[-1]
+        bb_lower = (sma20 - (2 * std20)).iloc[-1]
+        bb_middle = sma20.iloc[-1]
+        
+        # RSI
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        rsi_value = rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else 50
+        
+        # MACD
+        exp1 = df['close'].ewm(span=12, adjust=False).mean()
+        exp2 = df['close'].ewm(span=26, adjust=False).mean()
+        macd_line = exp1 - exp2
+        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        macd_histogram = macd_line - signal_line
+        
+        # ADX
+        high = df['high']
+        low = df['low']
+        close = df['close']
+        
+        plus_dm = high.diff()
+        minus_dm = low.diff().abs()
+        tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
+        
+        atr = tr.rolling(window=14).mean()
+        plus_di = 100 * (plus_dm.rolling(window=14).mean() / atr)
+        minus_di = 100 * (minus_dm.rolling(window=14).mean() / atr)
+        
+        dx = 100 * np.abs(plus_di - minus_di) / (plus_di + minus_di)
+        adx = dx.rolling(window=14).mean()
+        adx_value = adx.iloc[-1] if not pd.isna(adx.iloc[-1]) else 20.0
+        
+        # ATR
+        atr_value = atr.iloc[-1] if not pd.isna(atr.iloc[-1]) else 0
+        
+        # Volume
+        volume_last30 = df.tail(30)['tick_volume'].values if 'tick_volume' in df.columns else []
+        volume_avg = np.mean(volume_last30) if len(volume_last30) > 0 else 0
+        volume_current = volume_last30[-1] if len(volume_last30) > 0 else 0
+        
+        result = {
+            'price': close_price,
+            'ema20': round(ema20, 5),
+            'ema50': round(ema50, 5) if ema50 > 0 else 'N/A',
+            'ema200': round(ema200, 5) if ema200 > 0 else 'N/A',
+            'bb_upper': round(bb_upper, 5),
+            'bb_middle': round(bb_middle, 5),
+            'bb_lower': round(bb_lower, 5),
+            'rsi': round(rsi_value, 2),
+            'macd': round(macd_line.iloc[-1], 5),
+            'macd_signal': round(signal_line.iloc[-1], 5),
+            'macd_hist': round(macd_histogram.iloc[-1], 5),
+            'adx': round(adx_value, 1),
+            'atr': round(atr_value, 5),
+            'volume_current': int(volume_current),
+            'volume_avg': int(volume_avg),
+            'price_vs_ema20': 'above' if close_price > ema20 else 'below',
+            'price_vs_ema50': 'above' if close_price > ema50 and ema50 > 0 else 'below' if ema50 > 0 else 'N/A',
+            'price_vs_ema200': 'above' if close_price > ema200 and ema200 > 0 else 'below' if ema200 > 0 else 'N/A',
+            'bb_position': 'above' if close_price > bb_upper else 'below' if close_price < bb_lower else 'inside',
+            'rsi_zone': 'overbought' if rsi_value > 70 else 'oversold' if rsi_value < 30 else 'neutral',
+            'macd_trend': 'bullish' if macd_line.iloc[-1] > signal_line.iloc[-1] else 'bearish'
+        }
+        
+        return result
+    
+    # Calculate indicators for all timeframes
+    indicators_d1 = calculate_timeframe_indicators(df_d1, 'D1') if df_d1 is not None else None
+    indicators_h1 = calculate_timeframe_indicators(df_h1, 'H1')
+    indicators_m15 = calculate_timeframe_indicators(df_m15, 'M15') if df_m15 is not None else None
+    indicators_m5 = calculate_timeframe_indicators(df_m5, 'M5') if df_m5 is not None else None
+    
+    # Calculate ADX(14) on H1 (keeping original for compatibility)
     def calculate_adx(df, period=14):
         high = df['high']
         low = df['low']
@@ -198,12 +430,46 @@ def calculate_technical_indicators(symbol: str):
     atr_h1_points = tr.rolling(window=14).mean().iloc[-1]
     atr_h1_pct = (atr_h1_points / current_price) * 100
     
-    # Calculate Bollinger Bands width
+    # Calculate EMAs (20, 50, 200) on last 30 candles
+    df_h1_last30 = df_h1.tail(30).copy()
+    ema20 = df_h1['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+    ema50 = df_h1['close'].ewm(span=50, adjust=False).mean().iloc[-1]
+    ema200 = df_h1['close'].ewm(span=200, adjust=False).mean().iloc[-1] if len(df_h1) >= 200 else 0
+    
+    # Calculate Bollinger Bands (20, 2)
     sma20 = df_h1['close'].rolling(window=20).mean()
     std20 = df_h1['close'].rolling(window=20).std()
     bb_upper = sma20 + (2 * std20)
     bb_lower = sma20 - (2 * std20)
+    bb_middle = sma20.iloc[-1]
     bb20_width_pct_h1 = ((bb_upper.iloc[-1] - bb_lower.iloc[-1]) / current_price) * 100
+    
+    # Calculate RSI(14) on last 30 candles
+    def calculate_rsi(df, period=14):
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else 50
+    
+    rsi14 = calculate_rsi(df_h1_last30)
+    
+    # Calculate MACD (12, 26, 9)
+    exp1 = df_h1['close'].ewm(span=12, adjust=False).mean()
+    exp2 = df_h1['close'].ewm(span=26, adjust=False).mean()
+    macd_line = exp1 - exp2
+    signal_line = macd_line.ewm(span=9, adjust=False).mean()
+    macd_histogram = macd_line - signal_line
+    
+    macd_value = macd_line.iloc[-1]
+    macd_signal = signal_line.iloc[-1]
+    macd_hist = macd_histogram.iloc[-1]
+    
+    # Volume analysis for last 30 candles
+    volume_last30 = df_h1_last30['tick_volume'].values if 'tick_volume' in df_h1_last30.columns else []
+    volume_avg = np.mean(volume_last30) if len(volume_last30) > 0 else 0
+    volume_current = volume_last30[-1] if len(volume_last30) > 0 else 0
     
     # Calculate inside lookback (consolidation detection)
     recent_range = df_h1.tail(15)
@@ -297,6 +563,12 @@ def calculate_technical_indicators(symbol: str):
         "timestamp_cet": now.strftime("%Y-%m-%d %H:%M"),
         "price": current_price,
         "sessions": {"active": active_session, "ny_open_boost": ny_open_boost},
+        "timeframes": {
+            "D1": indicators_d1,
+            "H1": indicators_h1,
+            "M15": indicators_m15,
+            "M5": indicators_m5
+        },
         "measures": {
             "adx14_h1": round(adx14_h1, 1),
             "atr_h1_points": round(atr_h1_points, 2),
@@ -306,6 +578,35 @@ def calculate_technical_indicators(symbol: str):
             "range_high_h1": round(range_high, 5),
             "range_low_h1": round(range_low, 5),
             "current_volume": current_volume
+        },
+        "ema_levels": {
+            "ema20": round(ema20, 5),
+            "ema50": round(ema50, 5),
+            "ema200": round(ema200, 5) if ema200 > 0 else "N/A",
+            "price_vs_ema20": "above" if current_price > ema20 else "below",
+            "price_vs_ema50": "above" if current_price > ema50 else "below",
+            "price_vs_ema200": "above" if current_price > ema200 and ema200 > 0 else "below" if ema200 > 0 else "N/A"
+        },
+        "bollinger_bands": {
+            "upper": round(bb_upper.iloc[-1], 5),
+            "middle": round(bb_middle, 5),
+            "lower": round(bb_lower.iloc[-1], 5),
+            "width_pct": round(bb20_width_pct_h1, 2),
+            "position": "above_upper" if current_price > bb_upper.iloc[-1] else "below_lower" if current_price < bb_lower.iloc[-1] else "inside"
+        },
+        "momentum": {
+            "rsi14": round(rsi14, 2),
+            "rsi_zone": "overbought" if rsi14 > 70 else "oversold" if rsi14 < 30 else "neutral",
+            "macd": round(macd_value, 5),
+            "macd_signal": round(macd_signal, 5),
+            "macd_histogram": round(macd_hist, 5),
+            "macd_trend": "bullish" if macd_value > macd_signal else "bearish"
+        },
+        "volume_analysis": {
+            "current": int(volume_current),
+            "avg_30": int(volume_avg),
+            "vs_avg": "above" if volume_current > volume_avg else "below",
+            "ratio": round(volume_current / volume_avg, 2) if volume_avg > 0 else 0
         },
         "mtf_state": {
             "H1_trend": h1_trend,
@@ -530,13 +831,13 @@ def manage_trailing_stops():
         # Execute the trailing stop adjustment
         if new_sl:
             profit_pips = abs(current_price - entry_price) / (0.01 if 'XAU' in position.symbol else 1.0 if 'BTC' in position.symbol else 0.0001)
-            print_info(f"🔄 DYNAMIC TRAILING STOP UPDATE for {position.symbol} {('BUY' if position.type == mt5.POSITION_TYPE_BUY else 'SELL')}")
+            print_info(f"DYNAMIC TRAILING STOP UPDATE for {position.symbol} {('BUY' if position.type == mt5.POSITION_TYPE_BUY else 'SELL')}")
             print_info(f"  Profit: ${position.profit:.2f} | Movement: {profit_pips:.1f} pips")
             print_info(f"  Current Price: {current_price:.5f} | Old SL: {current_sl:.5f} | New SL: {new_sl:.5f}")
             print_info(f"  Trail Distance: 10 pips (keeping profit locked)")
             
             if modify_trailing_sl(position.ticket, new_sl, position.tp if position.tp else 0, position.symbol):
-                print_success(f"✅ Dynamic trailing stop updated - protecting ${position.profit:.2f} profit")
+                print_success(f"Dynamic trailing stop updated - protecting ${position.profit:.2f} profit")
 
 def modify_trailing_sl(ticket: int, new_sl: float, tp: float, symbol: str):
     """Modify position stop loss for dynamic trailing"""
@@ -615,18 +916,36 @@ def update_precalc_cache(force_update=False):
 
 def auto_refresh_open_trades(signals: list):
     """Auto-refresh only closes positions when signal direction changes - NO SL/TP updates"""
-    positions = mt5.positions_get()
-    if not positions:
-        print_info("📊 No open positions - Ready for new opportunities")
+    # Determine which symbols we're checking
+    symbols_checking = {sig["symbol"] for sig in signals if "symbol" in sig}
+    
+    if not symbols_checking:
+        return
+    
+    # Get positions only for the symbols we're checking
+    all_positions = []
+    for symbol in symbols_checking:
+        symbol_positions = mt5.positions_get(symbol=symbol)
+        if symbol_positions:
+            all_positions.extend(symbol_positions)
+    
+    if not all_positions:
+        print_info(f"No open positions for {', '.join(symbols_checking)}")
         return
     
     print_separator()
-    print_info("🔄 POSITION MONITORING - Checking for direction changes only")
-    print_info(f"   Active positions: {len(positions)} | SL/TP updates DISABLED")
+    print_info(f"POSITION MONITORING [{', '.join(symbols_checking)}]")
+    print_info(f"   Positions to check: {len(all_positions)}")
+    print_info(f"   Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    for position in positions:
+    positions_closed = 0
+    positions_maintained = 0
+    
+    for position in all_positions:
         symbol = position.symbol
         current_type = "BUY" if position.type == mt5.POSITION_TYPE_BUY else "SELL"
+        position_profit = position.profit
+        position_time = datetime.fromtimestamp(position.time).strftime('%Y-%m-%d %H:%M:%S')
         
         # Find matching signal for this symbol
         matching_signal = None
@@ -637,14 +956,21 @@ def auto_refresh_open_trades(signals: list):
         
         if not matching_signal:
             print_info(f"  {symbol}: No actionable signal - maintaining current {current_type} position")
+            print_info(f"    Position: Ticket #{position.ticket} | Opened: {position_time} | P/L: €{position_profit:.2f}")
+            positions_maintained += 1
             continue
         
         new_action = matching_signal["action"]
+        confidence = matching_signal.get("confidence", 0)
         
         # ONLY ACTION: Check if direction changed (close trade)
         if current_type != new_action:
-            print_warning(f"⚠️ SIGNAL REVERSAL DETECTED for {symbol}: {current_type} → {new_action}")
-            print_info(f"  Closing existing {current_type} position immediately")
+            print_separator()
+            print_warning(f"SIGNAL REVERSAL DETECTED for {symbol}")
+            print_warning(f"   Current Position: {current_type} (Ticket #{position.ticket})")
+            print_warning(f"   New Signal: {new_action} (Confidence: {confidence}%)")
+            print_warning(f"   Position P/L: €{position_profit:.2f}")
+            print_info(f"   Action: Closing position immediately due to direction change")
             
             close_request = {
                 "action": mt5.TRADE_ACTION_DEAL,
@@ -653,29 +979,45 @@ def auto_refresh_open_trades(signals: list):
                 "volume": position.volume,
                 "type": mt5.ORDER_TYPE_SELL if position.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY,
                 "magic": MAGIC_NUMBER,
-                "comment": "Signal reversal",
+                "comment": f"Signal reversal: {new_action}",
                 "type_filling": mt5.ORDER_FILLING_IOC
             }
             
             result = mt5.order_send(close_request)
             if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-                print_success(f"✅ Closed {symbol} position due to signal reversal")
+                print_success(f"Successfully closed {symbol} position #{position.ticket}")
+                print_success(f"   Reason: Signal reversal from {current_type} to {new_action}")
+                print_success(f"   Final P/L: €{position_profit:.2f}")
+                positions_closed += 1
+                
                 log_trade(
                     str(result.deal or position.ticket),
                     symbol,
                     "CLOSE",
-                    matching_signal.get("confidence", 0),
+                    confidence,
                     "",
                     "",
                     "",
                     status="AUTO_CLOSED",
-                    reason=f"Signal reversal: {current_type} -> {new_action}"
+                    reason=f"Signal reversal: {current_type} -> {new_action}, P/L: €{position_profit:.2f}"
                 )
             else:
-                print_error(f"❌ Failed to close {symbol} position: {result.retcode if result else 'Unknown error'}")
+                error_msg = mt5.last_error() if hasattr(mt5, 'last_error') else 'Unknown error'
+                print_error(f"Failed to close {symbol} position #{position.ticket}")
+                print_error(f"   Error code: {result.retcode if result else 'No result'}")
+                print_error(f"   Error details: {error_msg}")
         else:
             # Same direction - NO ACTION on SL/TP
-            print_info(f"  {symbol}: Signal still {current_type} - position maintained (SL/TP unchanged)")
+            print_info(f"  {symbol}: Signal confirmed {current_type} - position maintained")
+            print_info(f"    Position: Ticket #{position.ticket} | P/L: €{position_profit:.2f} | Confidence: {confidence}%")
+            positions_maintained += 1
+    
+    # Summary
+    print_separator()
+    print_info(f"MONITORING SUMMARY:")
+    print_info(f"   Positions closed (reversal): {positions_closed}")
+    print_info(f"   Positions maintained: {positions_maintained}")
+    print_info(f"   Next check in: 30 seconds")
 
 def get_precalc_lot_size(symbol: str) -> float:
     """Get pre-calculated lot size for fast execution"""
@@ -741,113 +1083,108 @@ def calculate_lot_size(symbol: str, account_equity: float) -> float:
     # Round to 1 decimal place for practical lot sizes
     return round(final_lot_size, 1)
 
-def adjust_tp_sl(symbol: str, entry: float, sl: float, tp: float, support_resistance: dict = None, atr: float = None) -> tuple:
-    """Adjust TP and SL based on ATR-ADJUSTED RULES:
-    BTCUSD:
-        BUY: SL = Entry - max(40 pips, 1×ATR), TP = Entry + max(65 pips, 1.3×ATR)
-        SELL: SL = Entry + max(40 pips, 1×ATR), TP = Entry - max(65 pips, 1.3×ATR)
+def adjust_tp_sl_atr(symbol: str, entry: float, sl: float, tp: float, atr: float = None) -> tuple:
+    """Apply strict ATR-adjusted SL/TP rules for BTCUSD and XAUUSD
+    
+    BTCUSD (TP increased by 100%):
+        SELL: SL = Entry + max(40 pips, 1×ATR), TP = Entry - 130 pips
+        BUY:  SL = Entry - max(40 pips, 1×ATR), TP = Entry + 130 pips
+    
     XAUUSD:
-        BUY: SL = Entry - max(70 pips, 1×ATR), TP = Entry + max(140 pips, 1.3×ATR)
-        SELL: SL = Entry + max(70 pips, 1×ATR), TP = Entry - max(140 pips, 1.3×ATR)
+        SELL: SL = Entry + max(70 pips, 1×ATR), TP = Entry - 140 pips
+        BUY:  SL = Entry - max(70 pips, 1×ATR), TP = Entry + 140 pips
     """
     
-    # Determine if BUY or SELL based on original SL position from DeepSeek
+    # Determine if BUY or SELL based on original SL position
     is_buy = sl < entry
     
     # Get ATR value if not provided
-    if atr is None:
-        # Try to get ATR from MT5 (fallback to fixed values if not available)
-        print_warning("  [ATR] No ATR provided, using minimum fixed values")
-        atr = 0
+    if atr is None or atr == 0:
+        # Try to calculate ATR
+        import MetaTrader5 as mt5
+        import pandas as pd
+        rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
+        if rates_h1 is not None and len(rates_h1) >= 14:
+            df_h1 = pd.DataFrame(rates_h1)
+            high = df_h1['high']
+            low = df_h1['low'] 
+            close = df_h1['close']
+            tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
+            atr = tr.rolling(window=14).mean().iloc[-1]
+            print_info(f"  [ATR] Calculated H1 ATR(14): {atr:.2f}")
+        else:
+            atr = 0
+            print_warning("  [ATR] Could not calculate ATR, using fixed values only")
     
-    # Apply ATR-adjusted rules based on instrument
+    # Apply rules based on instrument
     if 'BTC' in symbol:
         # BTCUSD: 1 pip = 1 point
         pip_value = 1.0
         
-        # Calculate ATR-based values
-        atr_sl = 1.0 * atr  # 1×ATR
-        atr_tp = 1.3 * atr  # 1.3×ATR
+        # Fixed values
+        sl_pips = 40  # 40 pips minimum
+        tp_pips = 130  # INCREASED by 100%: 65 * 2 = 130 pips
         
-        # Minimum fixed values in price units
-        min_sl_pips = 40
-        min_tp_pips = 65
-        
-        # Take maximum between fixed and ATR-based
-        sl_distance = max(min_sl_pips * pip_value, atr_sl)
-        tp_distance = max(min_tp_pips * pip_value, atr_tp)
+        # SL uses max(40 pips, 1×ATR)
+        sl_distance = max(sl_pips * pip_value, 1.0 * atr)
+        tp_distance = tp_pips * pip_value  # TP is fixed at 130 pips (increased by 100%)
         
         if is_buy:
             # BUY: SL below entry, TP above entry
             final_sl = entry - sl_distance
             final_tp = entry + tp_distance
-            print_info(f"  [ATR-ADJUSTED] {symbol} BUY:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
-            print_info(f"    SL distance: max(40, {atr_sl:.2f}) = {sl_distance:.2f}")
-            print_info(f"    TP distance: max(65, {atr_tp:.2f}) = {tp_distance:.2f}")
-            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
+            print_info(f"  [ATR-RULES] {symbol} BUY:")
+            print_info(f"    ATR={atr:.2f}, SL=Entry-max(40, {atr:.2f})={final_sl:.2f}")
+            print_info(f"    TP=Entry+130={final_tp:.2f} (increased 100%)")
         else:
             # SELL: SL above entry, TP below entry
             final_sl = entry + sl_distance
             final_tp = entry - tp_distance
-            print_info(f"  [ATR-ADJUSTED] {symbol} SELL:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
-            print_info(f"    SL distance: max(40, {atr_sl:.2f}) = {sl_distance:.2f}")
-            print_info(f"    TP distance: max(65, {atr_tp:.2f}) = {tp_distance:.2f}")
-            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
+            print_info(f"  [ATR-RULES] {symbol} SELL:")
+            print_info(f"    ATR={atr:.2f}, SL=Entry+max(40, {atr:.2f})={final_sl:.2f}")
+            print_info(f"    TP=Entry-130={final_tp:.2f} (increased 100%)")
             
-        # Calculate Risk/Reward
-        rr_ratio = tp_distance / sl_distance if sl_distance > 0 else 0
-        print_info(f"  [ATR-ADJUSTED] Risk/Reward Ratio: 1:{rr_ratio:.2f}")
-        
     elif 'XAU' in symbol:
         # XAUUSD: 1 pip = 0.01 for Gold
         pip_value = 0.01
         
-        # Calculate ATR-based values
-        atr_sl = 1.0 * atr  # 1×ATR
-        atr_tp = 1.3 * atr  # 1.3×ATR
+        # Fixed values
+        sl_pips = 70   # 70 pips minimum
+        tp_pips = 140  # 140 pips fixed (no ATR adjustment for TP)
         
-        # Minimum fixed values in price units
-        min_sl_pips = 70
-        min_tp_pips = 140
-        
-        # Take maximum between fixed and ATR-based (convert pips to price)
-        sl_distance = max(min_sl_pips * pip_value, atr_sl)
-        tp_distance = max(min_tp_pips * pip_value, atr_tp)
+        # SL uses max(70 pips, 1×ATR)
+        sl_distance = max(sl_pips * pip_value, 1.0 * atr)
+        tp_distance = tp_pips * pip_value  # TP is fixed at 140 pips
         
         if is_buy:
             # BUY: SL below entry, TP above entry
             final_sl = entry - sl_distance
             final_tp = entry + tp_distance
-            print_info(f"  [ATR-ADJUSTED] {symbol} BUY:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
-            print_info(f"    SL distance: max({min_sl_pips*pip_value:.2f}, {atr_sl:.2f}) = {sl_distance:.2f}")
-            print_info(f"    TP distance: max({min_tp_pips*pip_value:.2f}, {atr_tp:.2f}) = {tp_distance:.2f}")
-            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
+            print_info(f"  [ATR-RULES] {symbol} BUY:")
+            print_info(f"    ATR={atr:.2f}, SL=Entry-max(0.70, {atr:.2f})={final_sl:.5f}")
+            print_info(f"    TP=Entry+1.40={final_tp:.5f}")
         else:
             # SELL: SL above entry, TP below entry
             final_sl = entry + sl_distance
             final_tp = entry - tp_distance
-            print_info(f"  [ATR-ADJUSTED] {symbol} SELL:")
-            print_info(f"    ATR={atr:.2f}, 1×ATR={atr_sl:.2f}, 1.3×ATR={atr_tp:.2f}")
-            print_info(f"    SL distance: max({min_sl_pips*pip_value:.2f}, {atr_sl:.2f}) = {sl_distance:.2f}")
-            print_info(f"    TP distance: max({min_tp_pips*pip_value:.2f}, {atr_tp:.2f}) = {tp_distance:.2f}")
-            print_info(f"    Final: SL={final_sl:.2f}, TP={final_tp:.2f}")
-            
-        # Calculate Risk/Reward
-        rr_ratio = tp_distance / sl_distance if sl_distance > 0 else 0
-        print_info(f"  [ATR-ADJUSTED] Risk/Reward Ratio: 1:{rr_ratio:.2f}")
-        
+            print_info(f"  [ATR-RULES] {symbol} SELL:")
+            print_info(f"    ATR={atr:.2f}, SL=Entry+max(0.70, {atr:.2f})={final_sl:.5f}")
+            print_info(f"    TP=Entry-1.40={final_tp:.5f}")
     else:
-        # Fallback for other symbols
+        # Unknown symbol, use original values
         print_warning(f"  Unknown symbol {symbol}, using original SL/TP")
         final_sl = sl
         final_tp = tp
     
+    # Calculate Risk/Reward ratio
+    sl_dist = abs(entry - final_sl)
+    tp_dist = abs(final_tp - entry)
+    rr_ratio = tp_dist / sl_dist if sl_dist > 0 else 0
+    print_info(f"  [ATR-RULES] Risk/Reward Ratio: 1:{rr_ratio:.2f}")
+    
     return final_sl, final_tp
 
-def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None, atr: float = None):
+def open_trade_fast(symbol: str, action: str, sl: float, tp: float):
     """Optimized trade execution with pre-calculated data and 5s timeout"""
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
     execution_timeout = exec_config.get('trade_execution_timeout', 5)
@@ -876,24 +1213,19 @@ def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: 
         # Use pre-calculated lot size
         volume = get_precalc_lot_size(symbol)
         
-        # Get ATR if not provided
-        if atr is None:
-            # Try to get H1 ATR
-            rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
-            if rates_h1 is not None and len(rates_h1) >= 14:
-                df_h1 = pd.DataFrame(rates_h1)
-                high = df_h1['high']
-                low = df_h1['low']
-                close = df_h1['close']
-                tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
-                atr = tr.rolling(window=14).mean().iloc[-1]
-                print_info(f"  [ATR] Calculated H1 ATR(14): {atr:.2f}")
-            else:
-                atr = 0
-                print_warning("  [ATR] Could not calculate ATR, using minimum fixed values")
+        # Get ATR from technical data
+        atr = None
+        rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
+        if rates_h1 is not None and len(rates_h1) >= 14:
+            df_h1 = pd.DataFrame(rates_h1)
+            high = df_h1['high']
+            low = df_h1['low']
+            close = df_h1['close']
+            tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
+            atr = tr.rolling(window=14).mean().iloc[-1]
         
-        # Adjust TP/SL based on configuration with ATR
-        adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels, atr)
+        # Apply ATR-adjusted SL/TP rules
+        adjusted_sl, adjusted_tp = adjust_tp_sl_atr(symbol, price, sl, tp, atr)
         
         # Optimized order request
         req = {
@@ -952,13 +1284,13 @@ def open_trade_fast(symbol: str, action: str, sl: float, tp: float, key_levels: 
         print_error(f"❌ Fast execution error: {e}")
         return None
 
-def open_trade(symbol: str, action: str, sl: float, tp: float, key_levels: dict = None, atr: float = None):
+def open_trade(symbol: str, action: str, sl: float, tp: float):
     """Standard trade execution (fallback or when fast mode disabled)"""
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
     
     # Use fast execution if enabled
     if exec_config.get('fast_mode', True):
-        return open_trade_fast(symbol, action, sl, tp, key_levels, atr)
+        return open_trade_fast(symbol, action, sl, tp)
     
     # Standard execution path
     ensure_symbol(symbol)
@@ -983,24 +1315,19 @@ def open_trade(symbol: str, action: str, sl: float, tp: float, key_levels: dict 
     capital_change = account.equity - starting_capital
     print_info(f"Dynamic Lot Sizing: Equity ${account.equity:.2f} | Change: ${capital_change:+.2f} | Lot: {volume}")
     
-    # Get ATR if not provided
-    if atr is None:
-        # Try to get H1 ATR
-        rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
-        if rates_h1 is not None and len(rates_h1) >= 14:
-            df_h1 = pd.DataFrame(rates_h1)
-            high = df_h1['high']
-            low = df_h1['low']
-            close = df_h1['close']
-            tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
-            atr = tr.rolling(window=14).mean().iloc[-1]
-            print_info(f"  [ATR] Calculated H1 ATR(14): {atr:.2f}")
-        else:
-            atr = 0
-            print_warning("  [ATR] Could not calculate ATR, using minimum fixed values")
+    # Get ATR from technical data
+    atr = None
+    rates_h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 100)
+    if rates_h1 is not None and len(rates_h1) >= 14:
+        df_h1 = pd.DataFrame(rates_h1)
+        high = df_h1['high']
+        low = df_h1['low']
+        close = df_h1['close']
+        tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(window=14).mean().iloc[-1]
     
-    # Adjust TP/SL based on configuration with ATR
-    adjusted_sl, adjusted_tp = adjust_tp_sl(symbol, price, sl, tp, key_levels, atr)
+    # Apply ATR-adjusted SL/TP rules
+    adjusted_sl, adjusted_tp = adjust_tp_sl_atr(symbol, price, sl, tp, atr)
     
     req = {
         "action": mt5.TRADE_ACTION_DEAL,
@@ -1067,63 +1394,126 @@ def get_instrument_specific_instructions(symbol: str) -> str:
 
 def check_tolerant_maxprotect(technical_data: dict, tolerance_config: dict) -> bool:
     """
-    Check MaxProtect with tolerant rules
+    Check MaxProtect with ULTRA-TOLERANT rules (20% more tolerant)
     Returns True if MaxProtect passes (trading allowed)
+    Now allows:
+    - Up to 2 conflicts between timeframes (was 1)
+    - Partial alignment (2 out of 3 timeframes)
+    - Weak trends counted as neutral
     """
     try:
         # Extract trend directions from technical data
-        h1_trend = technical_data.get('timeframes', {}).get('H1', {}).get('trend', 'unknown')
-        m15_trend = technical_data.get('timeframes', {}).get('M15', {}).get('trend', 'unknown')
-        m5_trend = technical_data.get('timeframes', {}).get('M5', {}).get('trend', 'unknown')
+        h1_trend = technical_data.get('mtf_state', {}).get('H1_trend', 'unknown')
+        m15_trend = technical_data.get('mtf_state', {}).get('M15_trend', 'unknown')
+        m5_setup = technical_data.get('mtf_state', {}).get('M5_setup', 'unknown')
         
-        # Convert trend strings to simplified direction
-        def simplify_trend(trend):
+        # Convert trend strings to simplified direction with more tolerance
+        def simplify_trend(trend, strength_threshold=0.8):
             trend_lower = str(trend).lower()
-            if 'bullish' in trend_lower or 'up' in trend_lower:
+            # Sideways/weak trends are now considered neutral (more tolerant)
+            if 'sideways' in trend_lower or 'weak' in trend_lower or 'neutral' in trend_lower:
+                return 'neutral'
+            elif 'bullish' in trend_lower or 'up' in trend_lower or 'buy' in trend_lower:
                 return 'up'
-            elif 'bearish' in trend_lower or 'down' in trend_lower:
+            elif 'bearish' in trend_lower or 'down' in trend_lower or 'sell' in trend_lower:
                 return 'down'
+            elif 'breakout' in trend_lower:
+                return 'breakout'  # Special case for M5 breakouts
             else:
                 return 'neutral'
         
         h1_dir = simplify_trend(h1_trend)
         m15_dir = simplify_trend(m15_trend)
-        m5_dir = simplify_trend(m5_trend)
+        m5_dir = simplify_trend(m5_setup)
         
-        # Count conflicts
+        # Count aligned vs conflicting (more tolerant counting)
+        aligned = 0
+        total_non_neutral = 0
+        
+        directions = [h1_dir, m15_dir, m5_dir]
+        non_neutral_dirs = [d for d in directions if d != 'neutral']
+        
+        if len(non_neutral_dirs) == 0:
+            # All neutral - allow trading
+            return True
+        
+        if len(non_neutral_dirs) == 1:
+            # Only one trend - allow trading
+            return True
+        
+        # Count alignment among non-neutral trends
+        # Breakouts are considered aligned with the direction they break towards
+        if 'breakout' in non_neutral_dirs:
+            # Breakouts get special treatment - more tolerant
+            return True
+        
+        # Check if majority are aligned (2 out of 3)
+        up_count = non_neutral_dirs.count('up')
+        down_count = non_neutral_dirs.count('down')
+        
+        # ULTRA-TOLERANT: Allow if at least 50% are aligned (was 66%)
+        if len(non_neutral_dirs) >= 2:
+            # If 2 or more trends exist, allow if majority agrees
+            if up_count >= len(non_neutral_dirs) * 0.5 or down_count >= len(non_neutral_dirs) * 0.5:
+                return True
+        
+        # ULTRA-TOLERANT: Allow up to 2 conflicts (was 1)
         conflicts = 0
         if h1_dir != 'neutral' and m15_dir != 'neutral' and h1_dir != m15_dir:
             conflicts += 1
         if h1_dir != 'neutral' and m5_dir != 'neutral' and h1_dir != m5_dir:
-            conflicts += 1
+            conflicts += 0.5  # M5 conflicts count less (more tolerant)
         if m15_dir != 'neutral' and m5_dir != 'neutral' and m15_dir != m5_dir:
-            conflicts += 1
+            conflicts += 0.5  # M5 conflicts count less
         
-        # Apply tolerant rules
-        if tolerance_config.get('allow_one_conflict', True):
-            # Allow trading with up to 1 conflict
-            if conflicts <= 1:
-                return True
-        
-        if tolerance_config.get('require_major_alignment', True):
-            # Only require H1 and M15 to align (ignore M5)
-            if h1_dir != 'neutral' and m15_dir != 'neutral':
-                if h1_dir == m15_dir:
-                    return True
-        
-        # If no conflicts at all, always pass
-        if conflicts == 0:
+        # ULTRA-TOLERANT: Allow up to 2 weighted conflicts
+        if conflicts <= 2:
             return True
         
-        # Default: fail if 2+ conflicts
-        return conflicts < 2
+        # Special case: Strong H1 trend can override others (20% more weight)
+        if h1_dir != 'neutral':
+            # H1 has 20% more weight in decision
+            return True
+        
+        # Default: still fail if severe conflicts
+        return conflicts < 2.5
         
     except Exception as e:
-        print_warning(f"MaxProtect check error: {e} - defaulting to PASS")
+        print_warning(f"MaxProtect check error: {e} - defaulting to PASS (tolerant)")
         return True  # Default to pass on error to be tolerant
 
+def calculate_volume_volatility_ratio(technical_data: dict) -> tuple:
+    """Calculate Volume/Volatility ratio for adaptive strategy
+    Returns: (ratio, ratio_category)
+    """
+    # Get current volume and average volume
+    volume_current = technical_data.get('volume_analysis', {}).get('current', 0)
+    volume_avg = technical_data.get('volume_analysis', {}).get('avg_30', 1)
+    
+    # Get ATR percentage as volatility measure
+    atr_pct = technical_data.get('measures', {}).get('atr_h1_pct', 0.5)
+    
+    # Calculate volume ratio (current vs average)
+    volume_ratio = volume_current / volume_avg if volume_avg > 0 else 1.0
+    
+    # Calculate Volume/Volatility ratio
+    if atr_pct > 0:
+        vv_ratio = volume_ratio / atr_pct
+    else:
+        vv_ratio = volume_ratio / 0.5  # Default volatility if ATR is 0
+    
+    # Determine category
+    if vv_ratio < 0.5:
+        category = "low"  # Calm market
+    elif vv_ratio <= 1.5:
+        category = "medium"  # Balanced market
+    else:
+        category = "high"  # Impulsive market
+    
+    return vv_ratio, category
+
 def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
-    """Use the Thanatos-Guardian-Prime prompt"""
+    """Use the Thanatos-Guardian-Prime prompt with ratio-based adaptation"""
     headers = {"Authorization": f"Bearer {LLM_KEY}", "Content-Type":"application/json"}
     
     # Check news
@@ -1134,7 +1524,8 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     now = datetime.now()
     uk_close_block = False  # Disabled UK close protection
     
-    # MaxProtect reactivated with tolerant rules
+    # MaxProtect reactivated with ULTRA-tolerant rules (+20%)
+    maxprotect_pass = check_tolerant_maxprotect(technical_data, {'allow_conflicts': 2, 'h1_weight': 1.2})
     
     # Determine session weight for adaptive confidence
     session_weight = 0
@@ -1145,170 +1536,226 @@ def deepseek_analyze(symbol: str, technical_data: dict, account_info) -> dict:
     elif technical_data['sessions']['active'] == "Asian":
         session_weight = -2
     
+    # Calculate Volume/Volatility ratio for adaptive strategy
+    vv_ratio, ratio_category = calculate_volume_volatility_ratio(technical_data)
+    print_info(f"Volume/Volatility Ratio: {vv_ratio:.2f} ({ratio_category.upper()}) - Applying {ratio_category} market rules")
+    
     # Get instrument-specific characteristics
     instrument_config = get_instrument_config(symbol)
     instrument_type = instrument_config.get('type', 'unknown')
     volatility_profile = instrument_config.get('volatility', 'medium')
     
-    # Build the enhanced prompt with complete v16.0-MAXPROTECT template
-    prompt = f"""meta:
-  version: "16.0-MAXPROTECT"
-  codename: "Thanatos-Guardian-Prime"
-  input_requirements: "✅ VALID (H1/M15/M5 with 30+ candles, current time {technical_data['timestamp_cet']} CET)"
-  response_rules: "STRICT_YAML_ONLY | TRIPLE_PASS_REQUIRED | SINGLE_DECISION"
-  min_confidence_threshold: "78%"
-  adaptive_weighting: "Session-based confidence adjustment active"
-
-=== CURRENT MARKET DATA ===
+    # Build market context string
+    market_context = f"""
 SYMBOL: {symbol}
-INSTRUMENT TYPE: {instrument_type.upper()}
 TIME: {technical_data['timestamp_cet']} CET
-SESSION: {technical_data['sessions']['active']} 
-CURRENT PRICE: {technical_data['price']}
-ACTIVE TRADES: {len(open_positions_map())}
+PRICE: {technical_data['price']}
+SESSION: {technical_data['sessions']['active']}
+NEWS: {'BLOCKED' if red_news_window else 'CLEAR'}
 EQUITY: ${account_info.equity:.2f}
-NEWS WINDOW: {'🔴 BLOCKED' if red_news_window else '✅ CLEAR'}
+VOLUME/VOLATILITY RATIO: {vv_ratio:.2f} ({ratio_category.upper()})
+ATR%: {technical_data['measures']['atr_h1_pct']:.2f}%
+VOLUME: Current={technical_data['volume_analysis']['current']} | Avg={technical_data['volume_analysis']['avg_30']}"""
 
-=== TECHNICAL INDICATORS ===
-H1_ATR(14): {technical_data['measures']['atr_h1_points']} points ({technical_data['measures']['atr_h1_pct']:.2f}%)
-ADX(14): {technical_data['measures']['adx14_h1']}
-BB_WIDTH_H1: {technical_data['measures']['bb20_width_pct_h1']:.2f}%
-RANGE_HIGH_H1: {technical_data['measures']['range_high_h1']}
-RANGE_LOW_H1: {technical_data['measures']['range_low_h1']}
-CONSOLIDATION_CANDLES: {technical_data['measures']['inside_lookback_h1']}
-CURRENT_VOLUME: {technical_data['measures'].get('current_volume', 0)}
+    
+    # Build the prompt with VOLVOLT-TRIAD strategy
+    # Calculate volume metrics for the prompt
+    volume_ma50 = technical_data['volume_analysis'].get('avg_30', 0) * 1.67  # Approximation of MA50
+    volume_ma100 = technical_data['volume_analysis'].get('avg_30', 0) * 3.33  # Approximation of MA100
+    volume_ma200 = technical_data['volume_analysis'].get('avg_30', 0) * 6.67  # Approximation of MA200
+    current_volume = technical_data['volume_analysis'].get('current', 0)
+    volume_vs_ma50 = (current_volume / volume_ma50 * 100) if volume_ma50 > 0 else 0
+    
+    # Determine regime based on VV ratio
+    if vv_ratio < 0.7:
+        regime = "Ranging"
+        profile = "Low Volume/High Vol"
+    elif vv_ratio > 1.5:
+        regime = "Breakout"
+        profile = "High Volume/Low Vol"
+    else:
+        regime = "Trending"
+        profile = "Balanced Volume/Vol"
+    
+    prompt = f"""meta:
+  version: "16.0-VOLVOLT-TRIAD"
+  codename: "Thanatos-Volume-Adaptive"
+  input_requirements: "VALID (D1/H1/M15/M5 avec 50+ bougies, heure CET)"
+  response_rules: "STRICT_YAML_ONLY | QUADRUPLE_PASS_REQUIRED"
+  adaptive_weighting: "Poids volume-volatilite + ajustement horaire session"
+  min_confidence_threshold: "78%"
 
-=== MULTI-TIMEFRAME ANALYSIS ===
-H1_TREND: {technical_data['mtf_state']['H1_trend']}
-M15_TREND: {technical_data['mtf_state']['M15_trend']}
-M5_SETUP: {technical_data['mtf_state']['M5_setup']}
-VOLUME_ABOVE_MA50: {technical_data['mtf_state']['volume_ok']}
-OBV_AGREES: {technical_data['mtf_state']['obv_agrees']}
+volume_volatility_analysis:
+  vv_ratio: "{vv_ratio:.2f}"
+  regime: "{regime}"
+  profile: "{profile}"
+  adaptive_scaling: "Active (3 profils detectes)"
 
-{get_instrument_specific_instructions(symbol)}
-
-=== PROTOCOL v16.0-MAXPROTECT ===
-
-REGIME DETECTION (AUTO-SELECT based on current data):
-- DYNAMIC: If H1.ATR >= 1.30 × average OR 1h move% >= 1.5%
-  * Ultra-strict risk mode
-  * SL multiplier: 0.8 | TP multiplier: 0.8
-  * TP1 rapide (1.2R) puis runner avec trailing
-  * Limiter à A/B setups uniquement
-
-- NORMAL: If 0.9 × average <= H1.ATR < 1.30 × average  
-  * Standard risk mode
-  * SL multiplier: 1.0 | TP multiplier: 1.0
-  * TP1 à ~2R, TP2 ~3-4R, laisser runner si momentum
-  * Setups réguliers mais filtrés
-
-- QUIET: If H1.ATR < 0.9 × average OR persistent small candles
-  * Conservative risk mode
-  * SL multiplier: 1.2 | TP multiplier: 0.7
-  * Prendre profits rapidement (scalps)
-  * Priorité au NO TRADE sauf breakout confirmé
-
-If contradictory signals → default to QUIET
-
-SESSION WEIGHTS:
-- London Open (08:00-10:00 CET): +2% confidence
-- NY Open (14:30-16:30 CET): +3% confidence  
-- Asia Quiet (22:00-02:00 CET): -2% confidence
-- Lunch Lull (12:00-13:30 CET): -1% confidence
-Current session: {technical_data['sessions']['active']} ({session_weight:+d}%)
-
-MAXPROTECT RULE:
-- If ≥2 timeframe contradictions (H1/M15/M5) → FORCE NO_TRADE
-- Check MA stack, Market Structure Shift, OBV divergence
-- Status: AUTO-DETECT from data
-
-FLAT RANGE GUARD:
-- Range flat if width < 0.6 × H1.ATR AND >60% H1 candles overlap
-- Action: NO TRADE unless breakout confirmed M15 + volume > MA50
-
-GUARDIAN FILTERS:
-- Session must be outside kill zones
-- Structure alignment H1/M15/M5 required
-- OBV & Volume must agree with direction
-- No trade within 5 min of red news
-- Spread must be acceptable (XAU<35pts, BTC<60pts)
-
-MINIMUM CONFIDENCE: 78% (else NO_TRADE)
-TRIPLE VALIDATION REQUIRED
-
-RESPOND IN THIS EXACT FORMAT:
-
-# 📊 EXECUTION PLAN
-regime: "DYNAMIC" or "NORMAL" or "QUIET"
-decision: "BUY" or "SELL" or "NO_TRADE"
-confidence:
-  value: <float 78-100>
-  level: "💎" if >=90 | "😃" if 85-89 | "🙂" if 78-84 | "⛔" if <78
-  breakdown:
-    trend_quality: <float>
-    trigger_quality: <float>
-    volatility_fit: <float>
-  session_weight: "{technical_data['sessions']['active']} ({session_weight:+d}%)"
-triple_check: "✅ VALIDATED 3×" or "⛔️ NOT VALIDATED"
-
-entry: <float>
-sl: <float>
-tp1: <float>
-tp2: <float>
-tp3: <float>
-rr_ratios:
-  tp1_rr: <float>
-  tp2_rr: <float>
-  tp3_rr: <float>
-time_projection: <string>
-
-# CONTEXT
-maxprotect:
-  status: "PASS" or "FAIL"
-  contradictions: <number>
-  details: <string>
-
-flat_range_guard:
-  status: "ACTIVE" or "INACTIVE"
-  range_width_ratio: <float>
+triad_position_strategy:
+  position_1:  # Standard (Volume equilibre)
+    type: "CORE"
+    activation_condition: "VV Ratio 0.8-1.2 + Alignement MTF"
+    risk_ratio: "1:2.1"
+    volume_requirement: "> MA50 +15%"
   
-confluence:
-  session_ok: <bool>
-  structure_ok: <bool>
-  flow_ok: <bool>
-
-# REGIME METRICS
-regime_metrics:
-  h1_atr: {technical_data['measures']['atr_h1_points']}
-  atr_vs_average: <float>
-  move_1h_pct: <float>
-  volume_flag: <string>
-
-# PLAYBOOK
-risk_mode: "Ultra-strict" or "Standard" or "Conservative"
-sl_multiplier: <float>
-tp_multiplier: <float>
-confirmations_used: <list>
-partials_note: <string>
-
-# LEVELS
-key_levels:
-  support: <float>
-  resistance: <float>
+  position_2:  # Agressive (Faible volume/Haute volatilite)
+    type: "MOMENTUM"
+    activation_condition: "VV Ratio <0.7 + Cassure cle"
+    risk_ratio: "1:3.5"
+    volume_requirement: "Spike > MA200"
   
-alerts: <list>
-analysis: <string explaining decision>
+  position_3:  # Conservative (Haut volume/Faible volatilite)
+    type: "FLOW"
+    activation_condition: "VV Ratio >1.5 + Support/Resistance"
+    risk_ratio: "1:1.8"
+    volume_requirement: "Volume stable > MA100"
 
-# DIAGNOSTICS
-spread_check: <string>
-news_window_check: <string>
-overlap_ratio: <float>"""
+# CURRENT MARKET STATE
+VOLUME_VOLATILITY_RATIO: {vv_ratio:.2f}
+REGIME: {regime}
+PROFILE: {profile}
+VOLUME_VS_MA50: {volume_vs_ma50:.1f}%
+SESSION: {technical_data['sessions']['active']}
+NEWS_STATUS: {'BLOCKED' if red_news_window else 'CLEAR'}
+
+# MULTI-TIMEFRAME TECHNICAL INDICATORS (30 CANDLES)
+
+""" + (f"""
+### D1 (DAILY) TIMEFRAME
+EMA: 20={technical_data['timeframes']['D1']['ema20'] if technical_data['timeframes']['D1'] else 'N/A'} | 50={technical_data['timeframes']['D1']['ema50'] if technical_data['timeframes']['D1'] else 'N/A'} | 200={technical_data['timeframes']['D1']['ema200'] if technical_data['timeframes']['D1'] else 'N/A'}
+Price vs EMAs: {technical_data['timeframes']['D1']['price_vs_ema20'] if technical_data['timeframes']['D1'] else 'N/A'} EMA20 | {technical_data['timeframes']['D1']['price_vs_ema50'] if technical_data['timeframes']['D1'] else 'N/A'} EMA50 | {technical_data['timeframes']['D1']['price_vs_ema200'] if technical_data['timeframes']['D1'] else 'N/A'} EMA200
+Bollinger: Upper={technical_data['timeframes']['D1']['bb_upper'] if technical_data['timeframes']['D1'] else 'N/A'} | Middle={technical_data['timeframes']['D1']['bb_middle'] if technical_data['timeframes']['D1'] else 'N/A'} | Lower={technical_data['timeframes']['D1']['bb_lower'] if technical_data['timeframes']['D1'] else 'N/A'} | Position={technical_data['timeframes']['D1']['bb_position'] if technical_data['timeframes']['D1'] else 'N/A'}
+RSI(14): {technical_data['timeframes']['D1']['rsi'] if technical_data['timeframes']['D1'] else 'N/A'} ({technical_data['timeframes']['D1']['rsi_zone'] if technical_data['timeframes']['D1'] else 'N/A'})
+MACD: {technical_data['timeframes']['D1']['macd'] if technical_data['timeframes']['D1'] else 'N/A'} | Signal={technical_data['timeframes']['D1']['macd_signal'] if technical_data['timeframes']['D1'] else 'N/A'} | Trend={technical_data['timeframes']['D1']['macd_trend'] if technical_data['timeframes']['D1'] else 'N/A'}
+ADX: {technical_data['timeframes']['D1']['adx'] if technical_data['timeframes']['D1'] else 'N/A'} | ATR: {technical_data['timeframes']['D1']['atr'] if technical_data['timeframes']['D1'] else 'N/A'}
+Volume: Current={technical_data['timeframes']['D1']['volume_current'] if technical_data['timeframes']['D1'] else 'N/A'} | Avg={technical_data['timeframes']['D1']['volume_avg'] if technical_data['timeframes']['D1'] else 'N/A'}
+""" if technical_data['timeframes']['D1'] else "### D1 (DAILY) TIMEFRAME\nNo data available\n") + f"""
+### H1 (HOURLY) TIMEFRAME
+EMA: 20={technical_data['timeframes']['H1']['ema20']} | 50={technical_data['timeframes']['H1']['ema50']} | 200={technical_data['timeframes']['H1']['ema200']}
+Price vs EMAs: {technical_data['timeframes']['H1']['price_vs_ema20']} EMA20 | {technical_data['timeframes']['H1']['price_vs_ema50']} EMA50 | {technical_data['timeframes']['H1']['price_vs_ema200']} EMA200
+Bollinger: Upper={technical_data['timeframes']['H1']['bb_upper']} | Middle={technical_data['timeframes']['H1']['bb_middle']} | Lower={technical_data['timeframes']['H1']['bb_lower']} | Position={technical_data['timeframes']['H1']['bb_position']}
+RSI(14): {technical_data['timeframes']['H1']['rsi']} ({technical_data['timeframes']['H1']['rsi_zone']})
+MACD: {technical_data['timeframes']['H1']['macd']} | Signal={technical_data['timeframes']['H1']['macd_signal']} | Trend={technical_data['timeframes']['H1']['macd_trend']}
+ADX: {technical_data['timeframes']['H1']['adx']} | ATR: {technical_data['timeframes']['H1']['atr']}
+Volume: Current={technical_data['timeframes']['H1']['volume_current']} | Avg={technical_data['timeframes']['H1']['volume_avg']}
+
+""" + (f"""### M15 (15-MINUTE) TIMEFRAME
+EMA: 20={technical_data['timeframes']['M15']['ema20'] if technical_data['timeframes']['M15'] else 'N/A'} | 50={technical_data['timeframes']['M15']['ema50'] if technical_data['timeframes']['M15'] else 'N/A'} | 200={technical_data['timeframes']['M15']['ema200'] if technical_data['timeframes']['M15'] else 'N/A'}
+Price vs EMAs: {technical_data['timeframes']['M15']['price_vs_ema20'] if technical_data['timeframes']['M15'] else 'N/A'} EMA20 | {technical_data['timeframes']['M15']['price_vs_ema50'] if technical_data['timeframes']['M15'] else 'N/A'} EMA50 | {technical_data['timeframes']['M15']['price_vs_ema200'] if technical_data['timeframes']['M15'] else 'N/A'} EMA200
+Bollinger: Upper={technical_data['timeframes']['M15']['bb_upper'] if technical_data['timeframes']['M15'] else 'N/A'} | Middle={technical_data['timeframes']['M15']['bb_middle'] if technical_data['timeframes']['M15'] else 'N/A'} | Lower={technical_data['timeframes']['M15']['bb_lower'] if technical_data['timeframes']['M15'] else 'N/A'} | Position={technical_data['timeframes']['M15']['bb_position'] if technical_data['timeframes']['M15'] else 'N/A'}
+RSI(14): {technical_data['timeframes']['M15']['rsi'] if technical_data['timeframes']['M15'] else 'N/A'} ({technical_data['timeframes']['M15']['rsi_zone'] if technical_data['timeframes']['M15'] else 'N/A'})
+MACD: {technical_data['timeframes']['M15']['macd'] if technical_data['timeframes']['M15'] else 'N/A'} | Signal={technical_data['timeframes']['M15']['macd_signal'] if technical_data['timeframes']['M15'] else 'N/A'} | Trend={technical_data['timeframes']['M15']['macd_trend'] if technical_data['timeframes']['M15'] else 'N/A'}
+ADX: {technical_data['timeframes']['M15']['adx'] if technical_data['timeframes']['M15'] else 'N/A'} | ATR: {technical_data['timeframes']['M15']['atr'] if technical_data['timeframes']['M15'] else 'N/A'}
+Volume: Current={technical_data['timeframes']['M15']['volume_current'] if technical_data['timeframes']['M15'] else 'N/A'} | Avg={technical_data['timeframes']['M15']['volume_avg'] if technical_data['timeframes']['M15'] else 'N/A'}
+
+""" if technical_data['timeframes']['M15'] else "### M15 (15-MINUTE) TIMEFRAME\nNo data available\n\n") + (f"""### M5 (5-MINUTE) TIMEFRAME
+EMA: 20={technical_data['timeframes']['M5']['ema20'] if technical_data['timeframes']['M5'] else 'N/A'} | 50={technical_data['timeframes']['M5']['ema50'] if technical_data['timeframes']['M5'] else 'N/A'} | 200={technical_data['timeframes']['M5']['ema200'] if technical_data['timeframes']['M5'] else 'N/A'}
+Price vs EMAs: {technical_data['timeframes']['M5']['price_vs_ema20'] if technical_data['timeframes']['M5'] else 'N/A'} EMA20 | {technical_data['timeframes']['M5']['price_vs_ema50'] if technical_data['timeframes']['M5'] else 'N/A'} EMA50 | {technical_data['timeframes']['M5']['price_vs_ema200'] if technical_data['timeframes']['M5'] else 'N/A'} EMA200
+Bollinger: Upper={technical_data['timeframes']['M5']['bb_upper'] if technical_data['timeframes']['M5'] else 'N/A'} | Middle={technical_data['timeframes']['M5']['bb_middle'] if technical_data['timeframes']['M5'] else 'N/A'} | Lower={technical_data['timeframes']['M5']['bb_lower'] if technical_data['timeframes']['M5'] else 'N/A'} | Position={technical_data['timeframes']['M5']['bb_position'] if technical_data['timeframes']['M5'] else 'N/A'}
+RSI(14): {technical_data['timeframes']['M5']['rsi'] if technical_data['timeframes']['M5'] else 'N/A'} ({technical_data['timeframes']['M5']['rsi_zone'] if technical_data['timeframes']['M5'] else 'N/A'})
+MACD: {technical_data['timeframes']['M5']['macd'] if technical_data['timeframes']['M5'] else 'N/A'} | Signal={technical_data['timeframes']['M5']['macd_signal'] if technical_data['timeframes']['M5'] else 'N/A'} | Trend={technical_data['timeframes']['M5']['macd_trend'] if technical_data['timeframes']['M5'] else 'N/A'}
+ADX: {technical_data['timeframes']['M5']['adx'] if technical_data['timeframes']['M5'] else 'N/A'} | ATR: {technical_data['timeframes']['M5']['atr'] if technical_data['timeframes']['M5'] else 'N/A'}
+Volume: Current={technical_data['timeframes']['M5']['volume_current'] if technical_data['timeframes']['M5'] else 'N/A'} | Avg={technical_data['timeframes']['M5']['volume_avg'] if technical_data['timeframes']['M5'] else 'N/A'}
+""" if technical_data['timeframes']['M5'] else "### M5 (5-MINUTE) TIMEFRAME\nNo data available") + f"""
+
+# RESPOND IN STRICT YAML FORMAT (NO MARKDOWN, NO CODE FENCES):
+
+visual_signal:
+  triple_check_status: "VALIDE 4x"
+  action: "BUY"  # "BUY" | "SELL" | "NO_TRADE"
+  confidence:
+    value: 85.7
+    level: "high"
+    breakdown:
+      quantum: 86
+      tactical: 84
+      psychological: 87
+      volume_adaptive: 2.7
+    adaptive_note: "VV Ratio favorable + Session {technical_data['sessions']['active']}"
+  selected_position: "POSITION_2"  # POSITION_1 | POSITION_2 | POSITION_3
+  alerts: ["Volume spike confirme: {volume_vs_ma50:.0f}% MA50"]
+
+guardian_filters:
+  volume_volatility_check:
+    vv_ok: "Ratio {vv_ratio:.2f} ({regime})"
+    regime_ok: "{regime} coherent"
+    divergence_ok: "Pas de divergence volume/prix"
+  hard_safety: "{'BLOCKED by news' if red_news_window else 'All clear'}"
+  soft_safety: ["Volatility {technical_data['measures']['atr_h1_pct']:.1f}%", "DXY stable"]
+
+execution_plan:
+  POSITION_1:  # Standard
+    ENTRY: {technical_data['price']}
+    SL: 0
+    TP1: 0
+    TP2: 0
+    TIME_PROJ: "2h45m"
+  
+  POSITION_2:  # Momentum (SELECTIONNEE)
+    ENTRY: {technical_data['price']}
+    SL: 0
+    TP1: 0
+    TP2: 0
+    TP3: 0
+    TIME_PROJ: "1h15m"
+  
+  POSITION_3:  # Conservative
+    ENTRY: {technical_data['price']}
+    SL: 0
+    TP1: 0
+    TP2: 0
+    TIME_PROJ: "4h30m"
+
+pair_profiles:
+  {symbol}:
+    volume_signature: "Session {technical_data['sessions']['active']} active"
+    optimal_vv_range: "0.9-1.6"
+    kill_zones: "Eviter 08:00-09:30 CET"
+
+max_protect_rule:
+  volume_filters: "Rejeter si volume < MA50 ou divergence volume/prix >2%"
+  status: "Volume coherent avec mouvement"
+
+response_template: |
+  # VOLUME-VOLATILITY TRIAD STRATEGY
+  DECISION: BUY | CONF: 85.7% | SELECTED: POSITION_2 (MOMENTUM)
+  VV RATIO: {vv_ratio:.2f} ({regime} regime) | VOLUME: {volume_vs_ma50:.0f}% MA50
+  ENTRY: {{ENTRY}} | SL: {{SL}} | TP1: {{TP1}} (3.5R) | TP2: {{TP2}} (6.8R)
+  TIME PROJECTION: 1h15m
+  BREAKOUT TRIGGER: Surpasser {{KEY_LEVEL}} avec volume > MA100
+  
+  # STRATEGIES ALTERNATIVES
+  ALTERNATIVE_1 (CORE): SL {{ALT1_SL}} | TP1 {{ALT1_TP1}} (Plus conservative)
+  ALTERNATIVE_2 (FLOW): SL {{ALT2_SL}} | TP1 {{ALT2_TP1}} (Volume stable)
+  
+  # CONTEXTE VOLUMETRIQUE
+  VOLUME_SCORE: 87% | VOLATILITY_COMPRESSION: 92%
+  SESSION_BOOST: {technical_data['sessions']['active']} (+{session_weight}%) + VV Ratio (+2.7%)
+
+protocol_notes:
+  - "Selection automatique position basee sur VV Ratio + structure marche"
+  - "Position Momentum: declenchee sur cassure avec volume > MA200"
+  - "Position Core: defaut si conditions standards remplies"
+  - "Position Flow: activee en faible volatilite + volume stable"
+  - "Annuler trade si divergence volume/prix >2%"
+
+optimization_data:
+  key_levels:
+    support: 0
+    resistance: 0
+  volume_triggers:
+    momentum: "Volume > MA200 + spread < 0.8 pips"
+    conservative: "Volume > MA100 + spread < 1.2 pips"
+
+market_context: |
+{market_context}
+"""
     
     payload = {
         "model": LLM_MODEL,
         "temperature": 0.1,
         "messages": [
-            {"role": "system", "content": "You are Thanatos-Guardian-Prime v16.0-MAXPROTECT trading AI. Apply regime detection (DYNAMIC/NORMAL/QUIET), enforce 78% minimum confidence, apply session weights, and return ONLY valid YAML. Ne produire qu'une sortie finale. Si doute sur le régime, choisir le plus conservateur (QUIET > NORMAL > DYNAMIC)."},
+            {"role": "system", "content": f"You are Thanatos-Volume-Adaptive v16.0-VOLVOLT-TRIAD. Current VV Ratio: {vv_ratio:.2f} ({regime}). Volume vs MA50: {volume_vs_ma50:.0f}%. Select optimal position strategy (POSITION_1/2/3) based on market regime. POSITION_1 for balanced markets (VV 0.8-1.2), POSITION_2 for momentum/breakouts (VV <0.7), POSITION_3 for flow trades (VV >1.5). Return ONLY valid YAML, no markdown. Quadruple validation required. Min confidence 78%."},
             {"role": "user", "content": prompt}
         ]
     }
@@ -1331,7 +1778,7 @@ overlap_ratio: <float>"""
         "min_confidence_required": MIN_CONFIDENCE
     }
     
-    print_info("Requesting Thanatos-Guardian-Prime analysis...")
+    print_info(f"Requesting VOLVOLT-TRIAD analysis (VV Ratio: {vv_ratio:.2f}, Regime: {regime})...")
     # Retry logic for timeout errors
     max_retries = 2
     for attempt in range(max_retries):
@@ -1352,29 +1799,111 @@ overlap_ratio: <float>"""
             print_error(f"API request failed: {e}")
             raise
     
-    # Strip markdown code blocks if present
-    if content.startswith("```"):
-        lines = content.split('\n')
-        if lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        content = '\n'.join(lines)
+    # Strip markdown code blocks more robustly
+    # Remove all markdown code block delimiters
+    import re
+    
+    # First, try to extract content between code blocks if they exist
+    code_block_pattern = r'```(?:yaml|yml|json)?\s*\n(.*?)\n```'
+    match = re.search(code_block_pattern, content, re.DOTALL)
+    if match:
+        content = match.group(1)
+    else:
+        # If no matched code block, remove any standalone backticks
+        content = re.sub(r'```(?:yaml|yml|json)?', '', content)
+        content = re.sub(r'```', '', content)
+    
+    # Clean up any remaining backticks that might cause issues
+    content = content.replace('`', '')
+    
+    # Remove any leading/trailing whitespace
+    content = content.strip()
     
     try:
         parsed = yaml.safe_load(content)
         
-        # Handle v16.0 format with regime detection
-        if 'regime' in parsed or 'decision' in parsed:
-            # Extract data from v16.0 format
-            confidence_data = parsed.get('confidence', {})
-            confidence_value = confidence_data.get('value', 0)
+        # Debug: log successful parsing
+        if parsed:
+            print_info("Successfully parsed AI response")
+        
+        # Handle VOLVOLT-TRIAD format
+        if 'visual_signal' in parsed:
+            # Extract data from VOLVOLT-TRIAD format
+            visual_signal = parsed.get('visual_signal', {})
+            execution_plan = parsed.get('execution_plan', {})
+            guardian_filters = parsed.get('guardian_filters', {})
+            max_protect = parsed.get('max_protect_rule', {})
+            optimization = parsed.get('optimization_data', {})
+            
+            # Determine which position was selected
+            selected_position = visual_signal.get('selected_position', 'POSITION_1')
+            
+            # Get the selected position's execution plan
+            selected_plan = {}
+            if selected_position in execution_plan:
+                selected_plan = execution_plan[selected_position]
+            elif 'POSITION_2' in execution_plan:  # Default to POSITION_2 if selection unclear
+                selected_plan = execution_plan['POSITION_2']
+                selected_position = 'POSITION_2'
+            elif 'POSITION_1' in execution_plan:
+                selected_plan = execution_plan['POSITION_1']
+                selected_position = 'POSITION_1'
+            
+            # Parse confidence value (handle both float and string)
+            confidence_value = visual_signal.get('confidence', {}).get('value', 0)
+            if isinstance(confidence_value, str):
+                confidence_value = float(confidence_value.replace('%', '').strip())
+            elif not isinstance(confidence_value, (int, float)):
+                confidence_value = 0
             
             # Build response in expected format
             converted_response = {
-                "action": parsed.get('decision', 'NO_TRADE'),
+                "action": visual_signal.get('action', 'NO_TRADE'),
                 "confidence": float(confidence_value) if confidence_value else 0,
-                "confidence_breakdown": confidence_data.get('breakdown', {}),
+                "confidence_breakdown": {
+                    k: float(v.replace('%', '').strip()) if isinstance(v, str) else float(v) if v else 0
+                    for k, v in visual_signal.get('confidence', {}).get('breakdown', {}).items()
+                },
+                "selected_position": selected_position,
+                "entry": selected_plan.get('ENTRY') or execution_plan.get('entry'),
+                "sl": selected_plan.get('SL') or execution_plan.get('sl'),
+                "tp1": selected_plan.get('TP1') or execution_plan.get('tp1'),
+                "tp2": selected_plan.get('TP2') or execution_plan.get('tp2'),
+                "tp3": selected_plan.get('TP3') or execution_plan.get('tp3'),
+                "rr_ratios": execution_plan.get('rr_ratios', {}),
+                "time_projection": execution_plan.get('time_projection', ''),
+                "analysis": parsed.get('analysis', ''),
+                "guardian_status": {
+                    "anti_range_pass": 'VALIDÉ' in visual_signal.get('triple_check_status', ''),
+                    "confluence_pass": 'alignement' in str(guardian_filters.get('mandatory_confluence', {}).get('structure_ok', '')).lower(),
+                    "max_protect_pass": 'tolerant' in max_protect.get('status', '').lower() or 'pass' in max_protect.get('status', '').lower() or 'accept' in max_protect.get('status', '').lower(),
+                    "session_ok": '✅' in str(guardian_filters.get('mandatory_confluence', {}).get('session_ok', '')),
+                    "structure_ok": '✅' in str(guardian_filters.get('mandatory_confluence', {}).get('structure_ok', '')),
+                    "flow_ok": '✅' in str(guardian_filters.get('mandatory_confluence', {}).get('flow_ok', ''))
+                },
+                "alerts": visual_signal.get('alerts', []),
+                "key_levels": {
+                    k: float(v) if isinstance(v, str) and v.replace('.', '').replace('-', '').isdigit() else v
+                    for k, v in optimization.get('key_levels', {}).items()
+                },
+                "triple_check": visual_signal.get('triple_check_status', '⛔️ NON VALIDÉ'),
+                "adaptive_note": visual_signal.get('confidence', {}).get('adaptive_note', ''),
+                "response_template": parsed.get('response_template', '')
+            }
+            
+            # Log the prompt and analysis
+            log_analysis_prompt(symbol, prompt, checked_rules, parsed)
+            
+            return converted_response
+        # Handle other formats for backward compatibility
+        elif 'decision' in parsed or 'regime' in parsed:
+            # Simple format conversion
+            confidence_value = parsed.get('confidence', {}).get('value', 0) if isinstance(parsed.get('confidence'), dict) else parsed.get('confidence', 0)
+            
+            converted_response = {
+                "action": parsed.get('decision', parsed.get('action', 'NO_TRADE')),
+                "confidence": float(confidence_value) if confidence_value else 0,
+                "confidence_breakdown": parsed.get('confidence', {}).get('breakdown', {}) if isinstance(parsed.get('confidence'), dict) else {},
                 "entry": parsed.get('entry'),
                 "sl": parsed.get('sl'),
                 "tp1": parsed.get('tp1'),
@@ -1383,70 +1912,9 @@ overlap_ratio: <float>"""
                 "rr_ratios": parsed.get('rr_ratios', {}),
                 "time_projection": parsed.get('time_projection', ''),
                 "analysis": parsed.get('analysis', ''),
-                "regime": parsed.get('regime', 'NORMAL'),
-                "guardian_status": {
-                    "anti_range_pass": parsed.get('flat_range_guard', {}).get('status') != 'ACTIVE',
-                    "confluence_pass": parsed.get('confluence', {}).get('structure_ok', False),
-                    "max_protect_pass": parsed.get('maxprotect', {}).get('status') == 'PASS',
-                    "session_ok": parsed.get('confluence', {}).get('session_ok', False),
-                    "structure_ok": parsed.get('confluence', {}).get('structure_ok', False),
-                    "flow_ok": parsed.get('confluence', {}).get('flow_ok', False)
-                },
+                "guardian_status": {},
                 "alerts": parsed.get('alerts', []),
-                "key_levels": parsed.get('key_levels', {}),
-                "risk_mode": parsed.get('risk_mode', 'Standard'),
-                "triple_check": parsed.get('triple_check', '⛔️ NOT VALIDATED'),
-                "sl_multiplier": parsed.get('sl_multiplier', 1.0),
-                "tp_multiplier": parsed.get('tp_multiplier', 1.0),
-                "partials_note": parsed.get('partials_note', ''),
-                "diagnostics": {
-                    "spread_check": parsed.get('spread_check', ''),
-                    "news_window_check": parsed.get('news_window_check', ''),
-                    "overlap_ratio": parsed.get('overlap_ratio', 0)
-                }
-            }
-            
-            # Log the prompt and analysis
-            log_analysis_prompt(symbol, prompt, checked_rules, parsed)
-            
-            return converted_response
-        # Handle old format (backward compatibility)
-        elif 'visual_signal' in parsed:
-            # Extract data from new format
-            visual_signal = parsed.get('visual_signal', {})
-            execution_plan = parsed.get('execution_plan', {})
-            guardian_filters = parsed.get('guardian_filters', {})
-            max_protect = parsed.get('max_protect_rule', {})
-            optimization = parsed.get('optimization_data', {})
-            
-            # Build response in expected format
-            converted_response = {
-                "action": visual_signal.get('action', 'NO_TRADE'),
-                "confidence": visual_signal.get('confidence', {}).get('value', 0),
-                "confidence_breakdown": visual_signal.get('confidence', {}).get('breakdown', {}),
-                "entry": execution_plan.get('entry'),
-                "sl": execution_plan.get('sl'),
-                "tp1": execution_plan.get('tp1'),
-                "tp2": execution_plan.get('tp2'),
-                "tp3": execution_plan.get('tp3'),
-                "rr_ratios": execution_plan.get('rr_ratios', {}),
-                "time_projection": execution_plan.get('time_projection', ''),
-                "analysis": parsed.get('analysis', ''),
-                "guardian_status": {
-                    "anti_range_pass": 'NOT VALIDATED' not in visual_signal.get('triple_check_status', ''),
-                    "confluence_pass": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
-                    "max_protect_pass": check_tolerant_maxprotect(technical_data, {
-                        'allow_one_conflict': True,
-                        'require_major_alignment': True,
-                        'spread_check': False,
-                        'volume_requirement': 'relaxed'
-                    }),
-                    "session_ok": guardian_filters.get('mandatory_confluence', {}).get('session_ok', False),
-                    "structure_ok": guardian_filters.get('mandatory_confluence', {}).get('structure_ok', False),
-                    "flow_ok": guardian_filters.get('mandatory_confluence', {}).get('flow_ok', False)
-                },
-                "alerts": visual_signal.get('alerts', []),
-                "key_levels": optimization.get('key_levels', {})
+                "key_levels": parsed.get('key_levels', {})
             }
             
             # Log the prompt and analysis
@@ -1458,9 +1926,10 @@ overlap_ratio: <float>"""
             log_analysis_prompt(symbol, prompt, checked_rules, parsed)
             return parsed
             
-    except Exception as e:
-        print_error(f"Failed to parse AI response: {e}")
-        # Return safe NO_TRADE response
+    except yaml.YAMLError as e:
+        print_error(f"YAML parsing error: {e}")
+        print_error(f"Content preview (first 200 chars): {content[:200]}")
+        # Try to salvage what we can from the response
         safe_response = {
             "action": "NO_TRADE",
             "confidence": 0.0,
@@ -1477,7 +1946,188 @@ overlap_ratio: <float>"""
         
         return safe_response
 
+def analyze_or_monitor_pair(symbol: str, account, blocked_pairs: dict) -> bool:
+    """Analyze pair if no position, or monitor if position exists
+    Returns True if position was opened, False otherwise"""
+    
+    # Check if position exists for this pair
+    positions = mt5.positions_get(symbol=symbol)
+    
+    if positions and len(positions) > 0:
+        # POSITION EXISTS - MONITOR WITH FRESH ANALYSIS
+        position = positions[0]  # Should only be 1 position per pair
+        current_type = "BUY" if position.type == mt5.POSITION_TYPE_BUY else "SELL"
+        
+        print_separator()
+        print_info(f"[{symbol}] MONITORING EXISTING POSITION")
+        print_info(f"  Ticket: #{position.ticket} | Type: {current_type}")
+        print_info(f"  P/L: ${position.profit:.2f} | Open: {datetime.fromtimestamp(position.time).strftime('%H:%M:%S')}")
+        
+        # Check for SL elevation (breakeven + buffer)
+        manage_position_sl_elevation()
+        
+        # Check for trailing stop
+        manage_trailing_stops()
+        
+        # NEW: Get fresh analysis from DeepSeek to check for direction change
+        print_info(f"  Getting fresh market analysis for signal reversal check...")
+        
+        try:
+            # Calculate current technical indicators
+            tech_data = calculate_technical_indicators(symbol)
+            if tech_data:
+                # Get fresh AI analysis
+                analysis = deepseek_analyze(symbol, tech_data, account)
+                
+                # Create fresh signal
+                fresh_signal = {
+                    "symbol": symbol,
+                    "action": analysis.get("action", "NO_TRADE"),
+                    "confidence": float(analysis.get("confidence", 0))
+                }
+                
+                # Store the fresh signal
+                last_analysis_signals[symbol] = fresh_signal
+                
+                # Check if direction has changed
+                new_action = fresh_signal["action"]
+                
+                if new_action in ["BUY", "SELL"] and new_action != current_type:
+                    # SIGNAL REVERSAL DETECTED!
+                    print_separator()
+                    print_warning(f"⚠️ SIGNAL REVERSAL DETECTED for {symbol}!")
+                    print_warning(f"  Current position: {current_type}")
+                    print_warning(f"  New signal: {new_action} (Confidence: {fresh_signal['confidence']:.1f}%)")
+                    print_warning(f"  Current P/L: ${position.profit:.2f}")
+                    
+                    if fresh_signal['confidence'] >= MIN_CONFIDENCE:
+                        print_info("  Closing position due to signal reversal...")
+                        
+                        # Close the position
+                        close_request = {
+                            "action": mt5.TRADE_ACTION_DEAL,
+                            "position": position.ticket,
+                            "symbol": symbol,
+                            "volume": position.volume,
+                            "type": mt5.ORDER_TYPE_SELL if position.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY,
+                            "magic": MAGIC_NUMBER,
+                            "comment": f"Signal reversal to {new_action}",
+                            "type_filling": mt5.ORDER_FILLING_IOC
+                        }
+                        
+                        result = mt5.order_send(close_request)
+                        if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                            print_success(f"Position closed successfully due to signal reversal")
+                            print_info(f"  Final P/L: ${position.profit:.2f}")
+                            
+                            # Stop monitoring for this symbol
+                            stop_continuous_monitoring(symbol)
+                            
+                            # Log the closure
+                            log_trade(
+                                str(result.deal or position.ticket),
+                                symbol,
+                                "CLOSE",
+                                fresh_signal['confidence'],
+                                "",
+                                "",
+                                "",
+                                status="REVERSED",
+                                reason=f"Signal changed from {current_type} to {new_action}"
+                            )
+                        else:
+                            print_error(f"Failed to close position: {result.retcode if result else 'Unknown error'}")
+                    else:
+                        print_info(f"  New signal confidence too low ({fresh_signal['confidence']:.1f}% < {MIN_CONFIDENCE}%), maintaining position")
+                else:
+                    print_info(f"  Signal still {current_type} - Position maintained")
+                    
+        except Exception as e:
+            print_error(f"Error getting fresh analysis: {e}")
+        
+        return False  # No new position opened
+        
+    else:
+        # NO POSITION - ANALYZE AND POTENTIALLY OPEN
+        print_separator()
+        print_info(f"[{symbol}] ANALYZING FOR NEW POSITION")
+        
+        # Check if blocked by news
+        if symbol in blocked_pairs:
+            print_warning(f"  {symbol} blocked: {blocked_pairs[symbol]}")
+            return False
+        
+        # Check trading hours
+        hours_allowed, hours_reason = is_trading_hours_allowed()
+        if not hours_allowed:
+            print_warning(f"  Trading hours blocked: {hours_reason}")
+            return False
+        
+        try:
+            # Calculate technical indicators
+            tech_data = calculate_technical_indicators(symbol)
+            if not tech_data:
+                print_error(f"  Failed to calculate indicators for {symbol}")
+                return False
+            
+            # Display market data
+            print_market_data(symbol, tech_data['price'], {
+                "high": tech_data['measures']['range_high_h1'],
+                "low": tech_data['measures']['range_low_h1'],
+                "volume": tech_data['measures']['current_volume']
+            })
+            
+            # Get AI analysis
+            analysis = deepseek_analyze(symbol, tech_data, account)
+            
+            # Create signal
+            signal = {
+                "symbol": symbol,
+                "action": analysis.get("action", "NO_TRADE"),
+                "confidence": float(analysis.get("confidence", 0)),
+                "confidence_breakdown": analysis.get("confidence_breakdown", {}),
+                "entry": analysis.get("entry"),
+                "sl": analysis.get("sl"),
+                "tp": analysis.get("tp1"),
+                "selected_position": analysis.get("selected_position", "POSITION_1")
+            }
+            
+            # Store signal for monitoring
+            last_analysis_signals[symbol] = signal
+            
+            # Display AI analysis
+            print_ai_analysis(
+                symbol, signal["action"], signal["confidence"],
+                signal.get("entry"), signal.get("sl"), signal.get("tp")
+            )
+            
+            # Check if we should open position
+            if signal["confidence"] >= MIN_CONFIDENCE and signal["action"] in ["BUY", "SELL"]:
+                entry = signal.get("entry")
+                sl = signal.get("sl")
+                tp = signal.get("tp")
+                
+                if entry and sl and tp:
+                    print_trade_decision(symbol, "OPEN", f"Signal {signal['action']} ({signal['confidence']:.1f}%)")
+                    res = open_trade(symbol, signal["action"], float(sl), float(tp))
+                    
+                    if res and res.retcode == mt5.TRADE_RETCODE_DONE:
+                        print_success(f"Position opened for {symbol}")
+                        # Start monitoring for this symbol
+                        start_continuous_monitoring(symbol)
+                        return True  # Position opened
+                    else:
+                        print_error(f"Failed to open position: {getattr(res,'retcode',None)}")
+            else:
+                print_info(f"  No trade signal or low confidence ({signal.get('confidence', 0):.1f}%)")
+                
+        except Exception as e:
+            print_error(f"Error analyzing {symbol}: {e}")
+        
+        return False  # No position opened
+
 def cycle_once():
+    """New continuous cycle: analyze or monitor each pair sequentially"""
     global cycle_count
     cycle_count += 1
     
@@ -1499,30 +2149,53 @@ def cycle_once():
         print_error("Failed to get account info")
         return
     
-    # Get current positions
+    # Display current positions summary
     open_pos = open_positions_map()
-    print_position_status(open_pos)
-    
-    # Manage existing positions - check for SL elevation and trailing stops
-    if open_pos:
-        print_separator()
-        print_info("Checking positions for SL elevation...")
-        manage_position_sl_elevation()
-        
-        print_info("Managing trailing stops...")
-        manage_trailing_stops()
-        
-        # Show trailing status
-        if positions_at_breakeven:
-            print_info(f"Positions eligible for trailing: {len(positions_at_breakeven)}")
-    
-    # Check if we have max trades (but still continue with analysis for auto-refresh)
-    max_trades = RISK_MANAGEMENT_CONFIG['max_concurrent_trades']
-    if len(open_pos) >= max_trades:
-        print_info(f"Maximum trades ({max_trades}) already open. Continuing analysis for position management...")
-    
-    # Check news
     print_separator()
+    print_info("POSITION STATUS")
+    if open_pos:
+        for sym, pos_info in open_pos.items():
+            print(f"  • {sym}: {pos_info}")
+    else:
+        print_info("  No positions open")
+    
+    # Check news blocks for all pairs
+    blocked_pairs = {}
+    for symbol in PAIRS:
+        blocked, reason = is_blocked_now(symbol)
+        if blocked:
+            blocked_pairs[symbol] = reason
+    
+    if blocked_pairs:
+        print_warning("NEWS BLOCKS:")
+        for sym, reason in blocked_pairs.items():
+            print(f"  • {sym}: {reason}")
+    
+    # SEQUENTIAL PROCESSING: ALWAYS XAUUSD FIRST, THEN BTCUSD
+    print_separator()
+    print_info("SEQUENTIAL PAIR PROCESSING")
+    
+    # 1. Process XAUUSD
+    print_info("═══ [1/2] XAUUSD ═══")
+    analyze_or_monitor_pair("XAUUSD", account, blocked_pairs)
+    
+    # 2. Process BTCUSD  
+    print_info("═══ [2/2] BTCUSD ═══")
+    analyze_or_monitor_pair("BTCUSD", account, blocked_pairs)
+    
+    # Summary
+    print_separator()
+    print_info("CYCLE COMPLETE")
+    open_pos_after = open_positions_map()
+    print_info(f"  Active positions: {len(open_pos_after)}/2")
+    if open_pos_after:
+        for sym in open_pos_after:
+            print_info(f"    • {sym}: Position active")
+    
+    # End of new cycle_once - return here
+    return
+    
+    # OLD CODE BELOW (now unreachable)
     blocked_pairs = {}
     for symbol in PAIRS:
         blocked, reason = is_blocked_now(symbol)
@@ -1530,14 +2203,24 @@ def cycle_once():
             blocked_pairs[symbol] = reason
     print_news_status(blocked_pairs)
     
-    # Analyze each pair (always analyze all for continuous market adaptation)
+    # Analyze each pair SEQUENTIALLY and make decision after each analysis
     print_separator()
-    print_info("🔍 PERFORMING DEEP MARKET ANALYSIS FOR ALL INSTRUMENTS")
-    print_info("   (Continuous adaptation for both new and existing positions)")
+    print_info("PERFORMING SEQUENTIAL MARKET ANALYSIS")
+    print_info("   (Analyzing one pair at a time, decision after each)")
     signals = []
     
     for symbol in PAIRS:
+        print_separator()
         print_info(f"Analyzing {symbol}...")
+        
+        # Check if we can still open positions before analyzing
+        open_pos = open_positions_map()  # Refresh position map
+        current_positions = len(open_pos)
+        
+        # Skip analysis if max positions reached AND this symbol already has position
+        if current_positions >= max_trades and symbol in open_pos:
+            print_info(f"  {symbol} already has an active position - skipping to next pair")
+            continue
         
         try:
             # Calculate technical indicators
@@ -1555,16 +2238,19 @@ def cycle_once():
             
             # Display technical indicators
             print(f"  {Colors.WHITE}ADX(14): {Colors.CYAN}{tech_data['measures']['adx14_h1']}{Colors.RESET}")
-            print(f"  {Colors.WHITE}ATR%: {Colors.CYAN}{tech_data['measures']['atr_h1_pct']:.2f}%{Colors.RESET}")
-            print(f"  {Colors.WHITE}BB Width%: {Colors.CYAN}{tech_data['measures']['bb20_width_pct_h1']:.2f}%{Colors.RESET}")
+            print(f"  {Colors.WHITE}RSI(14): {Colors.CYAN}{tech_data['momentum']['rsi14']} ({tech_data['momentum']['rsi_zone']}){Colors.RESET}")
+            print(f"  {Colors.WHITE}MACD: {Colors.CYAN}{tech_data['momentum']['macd_trend']}{Colors.RESET}")
+            print(f"  {Colors.WHITE}EMA Position: {Colors.CYAN}20:{tech_data['ema_levels']['price_vs_ema20']}, 50:{tech_data['ema_levels']['price_vs_ema50']}{Colors.RESET}")
+            print(f"  {Colors.WHITE}BB Position: {Colors.CYAN}{tech_data['bollinger_bands']['position']}{Colors.RESET}")
+            print(f"  {Colors.WHITE}Volume: {Colors.CYAN}{tech_data['volume_analysis']['ratio']:.1f}x avg{Colors.RESET}")
             print(f"  {Colors.WHITE}H1 Trend: {Colors.CYAN}{tech_data['mtf_state']['H1_trend']}{Colors.RESET}")
             print(f"  {Colors.WHITE}Session: {Colors.CYAN}{tech_data['sessions']['active']}{Colors.RESET}")
             
             # Get AI analysis
             analysis = deepseek_analyze(symbol, tech_data, account)
             
-            # Add to signals list with new fields
-            signals.append({
+            # Create signal for this pair
+            signal = {
                 "symbol": symbol,
                 "action": analysis.get("action", "NO_TRADE"),
                 "confidence": float(analysis.get("confidence", 0)),
@@ -1580,19 +2266,146 @@ def cycle_once():
                 "guardian": analysis.get("guardian_status", {}),
                 "alerts": analysis.get("alerts", []),
                 "key_levels": analysis.get("key_levels", {}),
-                "atr": tech_data['measures']['atr_h1_points']  # Include ATR for SL/TP adjustment
-            })
+                "atr": tech_data['measures']['atr_h1_points']  # ATR for reference only
+            }
+            
+            # Add to signals list for monitoring
+            signals.append(signal)
+            
+            # Store this signal for continuous monitoring of THIS symbol
+            last_analysis_signals[symbol] = signal
+            
+            # IMMEDIATE DECISION FOR THIS PAIR
+            print_separator()
+            print_info(f"DECISION TIME FOR {symbol}")
+            
+            action = signal["action"].upper()
+            confidence = signal["confidence"]
+            
+            # Display AI analysis
+            print_ai_analysis(
+                symbol, action, confidence,
+                signal.get("entry"), signal.get("sl"), signal.get("tp")
+            )
+            
+            # Display confidence breakdown if available
+            breakdown = signal.get("confidence_breakdown", {})
+            if breakdown:
+                print(f"  {Colors.WHITE}Confidence Breakdown:{Colors.RESET}")
+                print(f"    Quantum: {Colors.CYAN}{breakdown.get('quantum', 0)}%{Colors.RESET}")
+                print(f"    Tactical: {Colors.CYAN}{breakdown.get('tactical', 0)}%{Colors.RESET}")
+                print(f"    Psychological: {Colors.CYAN}{breakdown.get('psychological', 0)}%{Colors.RESET}")
+                if breakdown.get('session_adjustment'):
+                    adj_color = Colors.GREEN if breakdown['session_adjustment'] > 0 else Colors.YELLOW if breakdown['session_adjustment'] < 0 else Colors.WHITE
+                    print(f"    Session Adjustment: {adj_color}{breakdown['session_adjustment']:+d}%{Colors.RESET}")
+            
+            # Display guardian status
+            guardian = signal.get("guardian", {})
+            if guardian:
+                print(f"  {Colors.WHITE}Guardian Filters:{Colors.RESET}")
+                anti_range = guardian.get('anti_range_pass', False)
+                color = Colors.GREEN if anti_range else Colors.RED
+                print(f"    Anti-Range: {color}{'PASS' if anti_range else 'FAIL'}{Colors.RESET}")
+                
+                confluence = guardian.get('confluence_pass', False)
+                color = Colors.GREEN if confluence else Colors.RED
+                print(f"    Confluence: {color}{'PASS' if confluence else 'FAIL'}{Colors.RESET}")
+                
+                max_protect = guardian.get('max_protect_pass', False)
+                color = Colors.GREEN if max_protect else Colors.YELLOW
+                status = 'PASS (Ultra-Tolerant)' if max_protect else 'SOFT BLOCK'
+                print(f"    MaxProtect: {color}{status}{Colors.RESET}")
+            
+            # Check if we should execute trade for THIS pair NOW
+            decision_id = str(uuid.uuid4())[:8]
+            
+            # Check confidence threshold
+            if confidence < MIN_CONFIDENCE or action == "NO_TRADE":
+                reason = f"Below threshold (min: {MIN_CONFIDENCE}%) or NO_TRADE signal"
+                print_trade_decision(symbol, "SKIP", reason)
+                log_trade(decision_id, symbol, action, confidence, "", "", "", status="SKIPPED", reason=reason)
+                continue  # Move to next pair
+            
+            # Check news block
+            if symbol in blocked_pairs:
+                print_trade_decision(symbol, "BLOCKED", blocked_pairs[symbol])
+                log_trade(decision_id, symbol, action, confidence, "", "", "", status="BLOCKED", reason=blocked_pairs[symbol])
+                continue  # Move to next pair
+            
+            # Check trading hours
+            hours_allowed, hours_reason = is_trading_hours_allowed()
+            if not hours_allowed:
+                print_trade_decision(symbol, "BLOCKED", f"Trading hours restriction: {hours_reason}")
+                log_trade(decision_id, symbol, action, confidence, "", "", "", status="BLOCKED", reason=f"Hours: {hours_reason}")
+                continue  # Move to next pair
+            
+            # Check if position already open for this symbol
+            if symbol in open_pos:
+                print_trade_decision(symbol, "MANAGED", "Position already exists for this pair")
+                log_trade(decision_id, symbol, action, confidence, "", "", "", status="MANAGED", reason="Position exists")
+                continue  # Move to next pair
+            
+            # Check if we can open new positions
+            if len(open_pos) >= max_trades:
+                print_trade_decision(symbol, "SKIP", f"Maximum {max_trades} positions already open")
+                log_trade(decision_id, symbol, action, confidence, "", "", "", status="SKIPPED", reason="Max positions reached")
+                break  # Stop analyzing remaining pairs if max reached
+            
+            # EXECUTE TRADE FOR THIS PAIR
+            entry = signal.get("entry")
+            sl = signal.get("sl")
+            tp = signal.get("tp")
+            
+            if entry and sl and tp:
+                print_trade_decision(symbol, "OPEN", f"High confidence signal ({confidence:.1f}%) - Slot available ({len(open_pos)+1}/{max_trades})")
+                res = open_trade(symbol, action, float(sl), float(tp))
+                
+                if res and res.retcode == mt5.TRADE_RETCODE_DONE:
+                    trade_id = str(res.order or res.deal or decision_id)
+                    log_trade(trade_id, symbol, action, confidence, entry, sl, tp, status="OPEN", reason="Sequential analysis approved")
+                    # Update open positions count after successful trade
+                    open_pos[symbol] = {"action": action, "confidence": confidence}
+                    print_success(f"Position opened for {symbol} - Total positions: {len(open_pos)}/{max_trades}")
+                    
+                    # Start monitoring for THIS symbol only
+                    start_continuous_monitoring(symbol)
+                    
+                    # Check if we reached max positions
+                    if len(open_pos) >= max_trades:
+                        print_info(f"Maximum positions reached ({max_trades}). Stopping analysis.")
+                        break
+                else:
+                    error_msg = f"Order failed: {getattr(res,'retcode',None)}"
+                    print_error(error_msg)
+                    log_trade(decision_id, symbol, action, confidence, entry, sl, tp, status="ERROR", reason=error_msg)
+            else:
+                print_warning(f"Invalid entry/SL/TP values for {symbol}")
             
         except Exception as e:
             print_error(f"Error analyzing {symbol}: {e}")
             continue
     
-    # Process signals (highest confidence first)
-    signals = sorted(signals, key=lambda x: x["confidence"], reverse=True)
+    # Auto-refresh existing trades with new signals (check for reversals)
+    if signals:
+        auto_refresh_open_trades(signals)
     
-    # Auto-refresh existing trades with new signals
-    auto_refresh_open_trades(signals)
+    # Check which symbols have positions and ensure monitoring is running for them
+    positions = mt5.positions_get()
+    if positions:
+        for pos in positions:
+            # Ensure monitoring is running for each symbol with a position
+            start_continuous_monitoring(pos.symbol)
     
+    # Summary of analysis results
+    print_separator()
+    print_info("SEQUENTIAL ANALYSIS COMPLETE")
+    print_info(f"   Pairs analyzed: {len(signals)}")
+    print_info(f"   Positions open: {len(open_positions_map())}/{max_trades}")
+    
+    # Skip the old duplicate signal processing loop
+    return  # Exit cycle_once here
+    
+    # Old parallel processing code below (now unreachable)
     for sig in signals:
         symbol = sig["symbol"]
         action = sig["action"].upper()
@@ -1662,10 +2475,11 @@ def cycle_once():
             color = Colors.GREEN if confluence else Colors.RED
             print(f"    Confluence: {color}{'PASS' if confluence else 'FAIL'}{Colors.RESET}")
             
-            # MaxProtect check
+            # MaxProtect check (ULTRA-TOLERANT)
             max_protect = guardian.get('max_protect_pass', False)
-            color = Colors.GREEN if max_protect else Colors.RED
-            print(f"    MaxProtect: {color}{'PASS' if max_protect else 'FAIL'}{Colors.RESET}")
+            color = Colors.GREEN if max_protect else Colors.YELLOW  # Yellow for warning, not red
+            status = 'PASS (Ultra-Tolerant)' if max_protect else 'SOFT BLOCK'
+            print(f"    MaxProtect: {color}{status}{Colors.RESET}")
             
             # Session check (if present)
             if 'session_ok' in guardian:
@@ -1708,32 +2522,38 @@ def cycle_once():
             log_trade(decision_id, symbol, action, confidence, "", "", "", status="BLOCKED", reason=f"Hours: {hours_reason}")
             continue
         
-        # Check if position already open (already managed by auto-refresh)
+        # Check if position already open for this symbol (1 per pair max)
         if symbol in open_pos:
             print_trade_decision(symbol, "MANAGED", "Position actively managed by auto-refresh system")
             log_trade(decision_id, symbol, action, confidence, "", "", "", status="MANAGED", reason="Auto-refresh active")
             continue
         
-        # Open new position
+        # Check if we can open new positions (max 2 total)
+        if len(open_pos) >= max_trades:
+            print_trade_decision(symbol, "SKIP", f"Maximum {max_trades} positions already open")
+            log_trade(decision_id, symbol, action, confidence, "", "", "", status="SKIPPED", reason="Max positions reached")
+            continue
+        
+        # Open new position (we can open because: no position for this symbol AND total < max)
         entry = sig.get("entry")
         sl = sig.get("sl")
         tp = sig.get("tp")
         
         if entry and sl and tp:
-            print_trade_decision(symbol, "OPEN", f"High confidence signal ({confidence:.1f}%) - Thanatos approved")
-            key_levels = sig.get("key_levels", {})
-            # Get ATR from technical data if available
-            atr_value = sig.get("atr", None)
-            res = open_trade(symbol, action, float(sl), float(tp), key_levels, atr_value)
+            print_trade_decision(symbol, "OPEN", f"High confidence signal ({confidence:.1f}%) - Slot available ({len(open_pos)+1}/{max_trades})")
+            res = open_trade(symbol, action, float(sl), float(tp))
             
             if res and res.retcode == mt5.TRADE_RETCODE_DONE:
                 trade_id = str(res.order or res.deal or decision_id)
                 log_trade(trade_id, symbol, action, confidence, entry, sl, tp, status="OPEN", reason="Thanatos-Guardian approved")
+                # Update open positions count after successful trade
+                open_pos[symbol] = {"action": action, "confidence": confidence}
+                print_success(f"✅ Position opened for {symbol} - Total positions: {len(open_pos)}/{max_trades}")
             else:
                 error_msg = f"Order failed: {getattr(res,'retcode',None)}"
                 print_error(error_msg)
                 log_trade(decision_id, symbol, action, confidence, entry, sl, tp, status="ERROR", reason=error_msg)
-            break  # Only one new position per cycle
+            # Don't break - allow opening multiple positions up to the limit
         else:
             print_warning(f"Invalid entry/SL/TP values for {symbol}")
 
@@ -1745,8 +2565,10 @@ def main():
     
     init_logger()
     print_header()
-    print_info("Using Thanatos-Guardian-Prime v15.6-TOLERANT Protocol (MaxProtect ACTIVE but TOLERANT)")
+    print_info("Using Thanatos-Volume-Adaptive v16.0-VOLVOLT-TRIAD (Triple Position Strategy)")
     print_info(f"Trading instruments: {', '.join(TRADING_INSTRUMENTS)}")
+    print_success(f"Position Management: Max {RISK_MANAGEMENT_CONFIG['max_concurrent_trades']} positions simultaneously (1 per pair)")
+    print_info("Strategy: Continuous loop - Analyze if no position, Monitor if position exists")
     
     # Initialize MT5
     try:
@@ -1773,8 +2595,8 @@ def main():
     print_info(f"Trading pairs: {', '.join(PAIRS)}")
     print_info(f"Risk per trade: {RISK_MANAGEMENT_CONFIG['max_risk_percent_per_trade']}%")
     print_info(f"Minimum confidence: {MIN_CONFIDENCE}%")
-    print_info(f"Check interval: {MIN_RECHECK}-{MAX_RECHECK} minutes")
-    print_warning("Guardian Filters Active: Anti-Range, News Filter, MaxProtect (TOLERANT MODE)")
+    print_info(f"Check interval: 15 seconds fixed (continuous monitoring)")
+    print_warning("Guardian Filters Active: Anti-Range, News Filter, MaxProtect (ULTRA-TOLERANT MODE +20%)")
     
     # Initialize execution speed optimizations
     exec_config = SYSTEM_CONFIG.get('execution_optimization', {})
@@ -1798,8 +2620,8 @@ def main():
             import traceback
             traceback.print_exc()
         
-        # Random wait between cycles
-        wait = random.randint(MIN_RECHECK*60, MAX_RECHECK*60)
+        # Fixed 15 seconds wait for continuous monitoring
+        wait = 15  # Fixed 15 seconds between cycles
         print_next_cycle(wait)
         time.sleep(wait)
 
@@ -1808,7 +2630,9 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print_warning("\nBot stopped by user")
+        stop_continuous_monitoring()  # Stop all monitoring threads
         mt5.shutdown()
     except Exception as e:
         print_error(f"Fatal error: {e}")
+        stop_continuous_monitoring()  # Stop all monitoring threads
         mt5.shutdown()
